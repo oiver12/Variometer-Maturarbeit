@@ -1,3 +1,4 @@
+#include "LinearRegression.h"
 #include <Dps310.h>
 
 bool hasStarted = false;
@@ -16,6 +17,7 @@ const float g = 9.80665;
 const float M = 0.0289644;
 const float L = 0.0065;
 
+LinearRegression lr = LinearRegression();
 Dps310 Dps310PressureSensor = Dps310();
 
 void setup()
@@ -28,13 +30,16 @@ void setup()
   Serial.println("Init complete!");
   heightDifferenzes[0] = 0;
   times[0] = 0;
-  for (size_t i = 1; i < 21; i++)
+  lr.reset();
+  lr.learn(0, 0);
+  for (size_t i = 1; i < 15; i++)
   {
 	  times[i] = times[i - 1] + 0.05f;
 	  heightDifferenzes[i] = times[i] * 3;
-	  Serial.print(times[i]);
-	  Serial.print("  ");
-	  Serial.println(heightDifferenzes[i]);
+	  //Serial.print(times[i]);
+	  //Serial.print("  ");
+	  //Serial.println(heightDifferenzes[i]);
+	  lr.learn(times[i], heightDifferenzes[i]);
   }
 }
 
@@ -47,8 +52,8 @@ void loop()
   uint8_t oversampling = 1;
   int16_t ret;
 
-  ret = Dps310PressureSensor.measureTempOnce(temperature, oversampling);
-
+  //ret = Dps310PressureSensor.measureTempOnce(temperature, oversampling);
+  //TODO check ob Temperatur Messung benötigt wird
   if (ret != 0)
   {
     //Something went wrong.
@@ -59,8 +64,8 @@ void loop()
   }
 
   //Pressure measurement behaves like temperature measurement
-  //ret = Dps310PressureSensor.measurePressureOnce(pressure);
-  ret = Dps310PressureSensor.measurePressureOnce(pressure, oversampling);
+  ret = Dps310PressureSensor.measurePressureOnce(pressure);
+  //ret = Dps310PressureSensor.measurePressureOnce(pressure, oversampling);
   //Serial.println(millis() - lastTime);
   lastTime = millis();
   if (ret != 0)
@@ -120,9 +125,4 @@ float getHeightDifferenz(float pressure, float temperature, int method)
   {
      return (float)44330 * (1 - pow(((float) pressure/startPressure), 0.190295));
   }
-}
-
-float linearRegression()
-{
-
 }

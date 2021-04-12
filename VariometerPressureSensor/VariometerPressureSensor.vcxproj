@@ -88,7 +88,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\VariometerPressureSensor;$(ProjectDir)..\..\libraries\DigitalPressureSensor\src;D:\Programme\Arduino\arduino-1.8.13\hardware\arduino\avr\libraries\SPI\src;D:\Programme\Arduino\arduino-1.8.13\hardware\arduino\avr\libraries\Wire\src;D:\Programme\Arduino\arduino-1.8.13\hardware\arduino\avr\cores\arduino;D:\Programme\Arduino\arduino-1.8.13\hardware\arduino\avr\variants\eightanaloginputs;D:\Programme\Arduino\arduino-1.8.13\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;D:\Programme\Arduino\arduino-1.8.13\hardware\tools\avr\avr\include;D:\Programme\Arduino\arduino-1.8.13\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;D:\Programme\Arduino\arduino-1.8.13\hardware\tools\avr\avr\include-fixed;D:\Programme\Arduino\arduino-1.8.13\hardware\tools\avr\avr\include\avr;D:\Programme\Arduino\arduino-1.8.13\hardware\tools\avr\lib\gcc\avr\4.9.2\include;D:\Programme\Arduino\arduino-1.8.13\hardware\tools\avr\lib\gcc\avr\4.9.2\include;D:\Programme\Arduino\arduino-1.8.13\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\VariometerPressureSensor;$(ProjectDir)..\..\..\Arduino\libraries\DigitalPressureSensor\src;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\arduino\avr\libraries\SPI\src;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\arduino\avr\libraries\Wire\src;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\arduino\avr\cores\arduino;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\arduino\avr\variants\eightanaloginputs;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\tools\avr\avr\include;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\tools\avr\avr\include-fixed;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\tools\avr\avr\include\avr;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\..\..\Downloads\arduino-1.8.13\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(ProjectDir)__vm\.VariometerPressureSensor.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>true</IgnoreStandardIncludePath>
       <PreprocessorDefinitions>__AVR_atmega328p__;__AVR_ATmega328P__;__AVR_ATmega328p__;_VMDEBUG=1;F_CPU=16000000L;ARDUINO=108013;ARDUINO_AVR_NANO;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -106,7 +106,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="LinearRegression.h" />
     <ClInclude Include="__vm\.VariometerPressureSensor.vsarduino.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="LinearRegression.cpp" />
   </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>
@@ -116,7 +120,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties config.Debug.customdebug_nano_atmega328old_debugger_type="universal" config.Debug.customdebug_nano_atmega328_debugger_type="universal" />
+      <UserProperties config.Debug.customdebug_nano_atmega328old_debugger_type="universal" config.Debug.customdebug_nano_atmega328_debugger_type="universal" arduino.upload.port="COM6" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>
