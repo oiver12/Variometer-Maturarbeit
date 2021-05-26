@@ -1,5 +1,10 @@
-#include "LinearRegression.h"
+//#include "LinearRegression.h"
 #include <Dps310.h>
+#include <SPI.h>
+#include <SD.h>
+#include <SoftwareSerial.h>
+
+const int lengthLastDates = 25;
 
 bool hasStarted = false;
 float hs;
@@ -7,9 +12,12 @@ float startPressure;
 float startHeight;
 float startTemperature;
 float reduzierterLuftdruckStart;
-float heightDifferenzes[21];
-float times[21];
+//float heightDifferenzes[lengthLastDates];
+//float times[lengthLastDates];
 float lastTime = 0;
+float lastPressure = 0;
+float pressure;
+float temperature;
 
 const float universalR = 8.3144598;
 const float spezificR = 287.053;
@@ -17,89 +25,170 @@ const float g = 9.80665;
 const float M = 0.0289644;
 const float L = 0.0065;
 
-LinearRegression lr = LinearRegression();
+File myFile;
+SoftwareSerial BTserial(2, 3); // RX | TX
+
+// change this to match your SD shield or module;
+const int chipSelect = 10;
+
+//LinearRegression lr = LinearRegression();
 Dps310 Dps310PressureSensor = Dps310();
 
 void setup()
 {
   Serial.begin(9600);
   while (!Serial);
-
+  Serial.println("Start");
   Dps310PressureSensor.begin(Wire);
 
-  Serial.println("Init complete!");
-  heightDifferenzes[0] = 0;
-  times[0] = 0;
-  lr.reset();
-  lr.learn(0, 0);
-  for (size_t i = 1; i < 15; i++)
+  Serial.print("Initializing SD card...");
+
+  if (!SD.begin())
   {
-	  times[i] = times[i - 1] + 0.05f;
-	  heightDifferenzes[i] = times[i] * 3;
-	  //Serial.print(times[i]);
-	  //Serial.print("  ");
-	  //Serial.println(heightDifferenzes[i]);
-	  lr.learn(times[i], heightDifferenzes[i]);
+	  Serial.println("initialization failed!");
+	  return;
   }
+  Serial.println("Init complete!");
+  //delete and remake again to overwrite last flight
+  SD.remove("data.txt");
+  myFile = SD.open("data.txt", FILE_WRITE);
+  BTserial.begin(9600);
+  //heightDifferenzes[0] = 0;
+  //times[0] = 0;
+  //lr.reset();
+  //lr.learn(0, 0);
+  //pressure = ReadPressure();
+  //uint16_t ret = Dps310PressureSensor.measureTempOnce(temperature);
+  //for (size_t i = 0; i < lengthLastDates; i++)
+  //{
+	 // times[i] = millis();
+	 // heightDifferenzes[i] = 0;
+	 // //times[i] = times[i - 1] + 0.05f;
+	 // //heightDifferenzes[i] = times[i] * 3;
+	 // //Serial.print(times[i]);
+	 // //Serial.print("  ");
+	 // //Serial.println(heightDifferenzes[i]);
+	 // //lr.learn(times[i], heightDifferenzes[i]);
+  //}
 }
 
 
 
 void loop()
 {
-  float temperature;
-  float pressure;
-  uint8_t oversampling = 1;
-  int16_t ret;
-
-  //ret = Dps310PressureSensor.measureTempOnce(temperature, oversampling);
-  //TODO check ob Temperatur Messung benötigt wird
-  if (ret != 0)
-  {
-    //Something went wrong.
-    //Look at the library code for more information about return codes
-    Serial.print("FAIL! ret = ");
-    Serial.println(ret);
-    return;
-  }
-
-  //Pressure measurement behaves like temperature measurement
-  ret = Dps310PressureSensor.measurePressureOnce(pressure);
+	//float temperature;
   //ret = Dps310PressureSensor.measurePressureOnce(pressure, oversampling);
   //Serial.println(millis() - lastTime);
-  lastTime = millis();
-  if (ret != 0)
+  //lastTime = millis();
+  pressure = ReadPressure(1);
+  if (pressure == 0)
   {
-    //Something went wrong.
-    //Look at the library code for more information about return codes
-    Serial.print("FAIL! ret = ");
-    Serial.println(ret);
-    return;
+	  return;
   }
   else
   {
-     if (Serial.available() > 0) 
+     if (BTserial.available() > 0) 
      {
         // read the incoming byte:
-        char incomingByte = Serial.read();
+        char incomingByte = (char)BTserial.read();
         if(incomingByte == 's')
         {
-          startHeight = Serial.parseInt();
-          startPressure = pressure;
-          startTemperature = temperature;
-          hasStarted = true;
-          reduzierterLuftdruckStart = pressure / pow(1-L*startHeight / ((temperature+273.15)+L*startHeight), 0.03416/L);
-          Serial.println(reduzierterLuftdruckStart);
-          Serial.println("Start");
+    			temperature = readTemperatur(7);
+    			startHeight = BTserial.parseInt();
+    			startPressure = ReadPressure(7);
+    			startTemperature = temperature;
+    			hasStarted = true;
+    			reduzierterLuftdruckStart = startPressure / pow(1-L*startHeight / ((temperature+273.15)+L*startHeight), 0.03416/L);
+         if(myFile)
+         {
+            myFile.println("Start " + String(millis()) + ";" + String(startPressure) + ";" + String(startHeight) + ";" + String(startTemperature));
+      			Serial.println("Start mit reduziertem Luftdruck von: " + String(reduzierterLuftdruckStart) + "Luftdruck von: " + String(startPressure));
+      			BTserial.println("Start mit reduziertem Luftdruck von: " + String(reduzierterLuftdruckStart) + "Luftdruck von: " + String(startPressure) + "Temp: " + String(startTemperature));
+      			lastTime = millis();
+      			lastPressure = pressure;
+         }
         }
      }
      if(hasStarted)
-     {
-		 Serial.println(getHeightDifferenz(pressure, temperature, 0));
+     {	
+  		 if (BTserial.available() > 0)
+  		 {
+  			 char incomingChar = (char)BTserial.read();
+  			 Serial.println(incomingChar);
+  			 if (incomingChar == 'c')
+  			 {
+  				 hasStarted = false;
+  				 myFile.close();
+  				 BTserial.println("done.");
+  				 return;
+  			 }
+         if(incomingChar == 'f')
+         {
+          BTserial.println("Lenght of file: " + String(myFile.size()));
+         }
+  		 }
+  		 if (myFile)
+  		 {
+  			 //Serial.println(String(millis() - lastTime) + ';' + String(pressure - lastPressure));
+  			 myFile.println(String(millis() - lastTime) + ';' + String(pressure - lastPressure));
+  			 lastTime = millis();
+  			 lastPressure = pressure;
+  		 }
+  		 else
+  		 {
+  			 BTserial.println("error opening data.txt");
+  		 }
+  		 /*lr.reset();
+  		 for (size_t i = lengthLastDates-2; i <= 0; i--)
+  		 {
+  			 heightDifferenzes[i + 1] = heightDifferenzes[i];
+  			 times[i + 1] = times[i];
+  			 lr.learn(times[i+1], heightDifferenzes[i+1]);
+  		 }
+  		 heightDifferenzes[0] = getHeightDifferenz(pressure, temperature, 0);
+  		 times[0] = millis();
+  		 lr.learn(times[0], heightDifferenzes[0]);
+  		 Serial.print(String(times[0]) + String(heightDifferenzes[0]));
+  		 Serial.println(lr.getSlope());*/
+  		 //Serial.println(getHeightDifferenz(pressure, temperature, 0));
      }
   }
 
   //delay(500);
+}
+
+float ReadPressure(int oversampling)
+{
+	float pres;
+	//uint8_t oversampling = 1;
+	int16_t ret;
+	ret = Dps310PressureSensor.measurePressureOnce(pres, oversampling);
+	if (ret != 0)
+	{
+		//Something went wrong.
+		//Look at the library code for more information about return codes
+		Serial.print("FAIL! ret = ");
+		Serial.println(ret);
+		return 0;
+	}
+	return pres;
+}
+
+float readTemperatur(int oversampling)
+{
+	float temp;
+	//uint8_t oversampling = 1;
+	int16_t ret;
+	ret = Dps310PressureSensor.measureTempOnce(temp, oversampling);
+	if (ret != 0)
+	{
+		//Something went wrong.
+		//Look at the library code for more information about return codes
+		Serial.print("FAIL! ret = ");
+		Serial.println(ret);
+		return 0;
+	}
+	return temp;
 }
 
 float getHeightDifferenz(float pressure, float temperature, int method)
