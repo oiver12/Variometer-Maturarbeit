@@ -130,7 +130,7 @@ void loop()
   		 if (myFile)
   		 {
   			 //Serial.println(String(millis() - lastTime) + ';' + String(pressure - lastPressure));
-  			 myFile.println(String(millis() - lastTime) + ';' + String(pressure - lastPressure));
+  		   myFile.println(String(millis() - lastTime) + ';' + String(pressure - lastPressure));
   			 lastTime = millis();
   			 lastPressure = pressure;
   		 }
