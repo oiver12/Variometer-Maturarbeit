@@ -581,3 +581,14 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+
+.vscode/*
+VariometerVersion1/.vscode/settings.json
+VariometerVersion1/.vscode/tasks.json
+VariometerVersion1/.vscode/launch.json
+VariometerVersion1/.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/

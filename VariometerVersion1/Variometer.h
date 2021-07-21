@@ -1,26 +1,34 @@
 #ifndef Variometer_h
 #define Variometer_h
 
-#include "LinearRegression.h";
+#include "LinearRegression.h"
+#include "FiFo.h"
 
+constexpr int lengthGeleitenderDurchschnitt = 5;
 
 class Variometer {
 public:
+	bool gleitenderDurchschnitt = true;
 	float reduzierterLuftdruckStart;
-	//Queue_t q;
 	void init(int countMean, float startPressure, float startTemp, float startHeight);
 	void addSample(double pressure, double time);
+	void setNewBase(double newPressure, double newTemp);
 	float getVelocitySinceLast();
 	float getHeightDifferenz(float pressure, float temperature, int method);
+	LinearRegression getLinearRegression();
 
 private:
-	float startPressure;
-	float startTemp;
-	//int lengthBuffer;
 	int countMean;
 	int n = 0;
-	double meanPressure = 0;
-	double meanTime = 0;
+	float startPressure;
+	float basePressure;
+	float baseTemp;
+	//für gleitenderDurchschnitt
+	CFiFo<float, lengthGeleitenderDurchschnitt> lastPressures;
+	CFiFo<float, lengthGeleitenderDurchschnitt> lastTimes;
+
+	float meanPressureSum = 0;
+	float meanTimeSum = 0;
 	LinearRegression lr = LinearRegression();
 	const float universalR = 8.3144598;
 	const float spezificR = 287.053;

@@ -2,6 +2,7 @@
 
 void LinearRegression::learn(double x, double y)
 {
+	//bufferX[n] = x;
 	n++;
 	sumMeanX = sumMeanX + x;
 	sumMeanY = sumMeanY + y;
@@ -20,15 +21,30 @@ float LinearRegression::getSlope()
 	return m;
 }
 
-int LinearRegression::samples()
+float LinearRegression::getN()
 {
 	return n;
+}
+float LinearRegression::getSumMeanX()
+{
+	return sumMeanX;
+}
+float LinearRegression::getSumMeanY()
+{
+	return sumMeanY;
+}
+float LinearRegression::getSumMeanXY()
+{
+	return sumMeanXY;
+}
+float LinearRegression::getSumMeanXYSq()
+{
+	return sumMeanXYSq;
 }
 
 void LinearRegression::reset()
 {
-	Serial.println(String(n) + "n");
-	int n = 0;
+	n = 0;
 	sumMeanX = 0;
 	sumMeanY = 0;
 	sumMeanXY = 0;

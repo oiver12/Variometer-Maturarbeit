@@ -18,7 +18,7 @@ namespace VariometerDataAnalysis
 
 			bool saveHeight = true;
 
-			int[] durchschnittVon = { 5 };
+			int[] durchschnittVon = { 1 };
 
 			float[] startPressure = { 82216.38f };
 			float[] startHeight = { 1800 };
@@ -47,8 +47,10 @@ namespace VariometerDataAnalysis
 				for (int y = 1; y < allLines[i].Length; y++)
 				{
 					int indexBracket = allLines[i][y].IndexOf(';');
-					float deltaTime = float.Parse(allLines[i][y].Substring(0, indexBracket).Replace('.', ','));
-					float deltaPressure = float.Parse(allLines[i][y].Substring(indexBracket + 1, allLines[i][y].Length - indexBracket - 1).Replace('.', ','));
+					string allLinesNow = allLines[i][y];
+					string test = allLines[i][y].Substring(0, indexBracket);
+					float deltaTime = float.Parse(allLines[i][y].Substring(0, indexBracket));
+					float deltaPressure = float.Parse(allLines[i][y].Substring(indexBracket + 1, allLines[i][y].Length - indexBracket - 1));
 					time[i] += deltaTime;
 					pressure[i] += deltaPressure;
 					if (y % durchschnittVon[i] == 0)
