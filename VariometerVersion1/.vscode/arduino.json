@@ -2,6 +2,6 @@
     "configuration": "cpu=atmega328old",
     "board": "arduino:avr:nano",
     "programmer": "arduino:avrisp",
-    "port": "COM6",
-    "sketch": "VariometerVersion1.ino"
+    "sketch": "VariometerVersion1.ino",
+    "port": "COM6"
 }

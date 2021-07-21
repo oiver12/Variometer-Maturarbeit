@@ -5,8 +5,13 @@ class LinearRegression {
 public:
 	void learn(double x, double y);
 	void reset();
-	int samples();
 	float getSlope();
+	float getN();
+	float getSumMeanX();
+	float getSumMeanY();
+	float getSumMeanXY();
+	float getSumMeanXYSq();
+	//double bufferX[5];
 private:
 	int n = 0;
 	float sumMeanX = 0;

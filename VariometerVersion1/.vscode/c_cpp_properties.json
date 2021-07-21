@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Arduino",
-            "compilerPath": "D:\\Programme\\Arduino\\arduino-1.8.13\\hardware\\tools\\avr\\bin\\avr-g++",
+            "compilerPath": "C:\\Users\\Oliver Baumgartner\\Downloads\\arduino-1.8.13\\hardware\\tools\\avr\\bin\\avr-g++",
             "compilerArgs": [
                 "-std=gnu++11",
                 "-fpermissive",
@@ -14,22 +14,19 @@
                 "-Wno-error=narrowing"
             ],
             "intelliSenseMode": "gcc-x64",
-          "includePath": [
-            "D:\\Programme\\Arduino\\arduino-1.8.13\\hardware\\arduino\\avr\\cores\\arduino",
-            "D:\\Programme\\Arduino\\arduino-1.8.13\\hardware\\arduino\\avr\\variants\\eightanaloginputs",
-            "C:\\Users\\Oliver\\Documents\\Arduino\\libraries\\DigitalPressureSensor\\src",
-            "D:\\Programme\\Arduino\\arduino-1.8.13\\hardware\\arduino\\avr\\libraries\\SPI\\src",
-            "D:\\Programme\\Arduino\\arduino-1.8.13\\hardware\\arduino\\avr\\libraries\\Wire\\src",
-            "D:\\Programme\\Arduino\\arduino-1.8.13\\hardware\\arduino\\avr\\libraries\\SoftwareSerial\\src",
-            "C:\\Users\\Oliver\\Documents\\Arduino\\libraries\\LinearRegression\\src",
-            "C:\\Users\\Oliver\\Documents\\Arduino\\libraries\\cQueue\\src",
-            "d:\\programme\\arduino\\arduino-1.8.13\\hardware\\tools\\avr\\lib\\gcc\\avr\\7.3.0\\include",
-            "d:\\programme\\arduino\\arduino-1.8.13\\hardware\\tools\\avr\\lib\\gcc\\avr\\7.3.0\\include-fixed",
-            "d:\\programme\\arduino\\arduino-1.8.13\\hardware\\tools\\avr\\avr\\include",
-            "${workspaceFolder}/**",
-          ],
+            "includePath": [
+                "C:\\Users\\Oliver Baumgartner\\Downloads\\arduino-1.8.13\\hardware\\arduino\\avr\\cores\\arduino",
+                "C:\\Users\\Oliver Baumgartner\\Downloads\\arduino-1.8.13\\hardware\\arduino\\avr\\variants\\eightanaloginputs",
+                "C:\\Users\\Oliver Baumgartner\\Documents\\Arduino\\libraries\\DigitalPressureSensor\\src",
+                "C:\\Users\\Oliver Baumgartner\\Downloads\\arduino-1.8.13\\hardware\\arduino\\avr\\libraries\\SPI\\src",
+                "C:\\Users\\Oliver Baumgartner\\Downloads\\arduino-1.8.13\\hardware\\arduino\\avr\\libraries\\Wire\\src",
+                "C:\\Users\\Oliver Baumgartner\\Downloads\\arduino-1.8.13\\hardware\\arduino\\avr\\libraries\\SoftwareSerial\\src",
+                "c:\\users\\oliver baumgartner\\downloads\\arduino-1.8.13\\hardware\\tools\\avr\\lib\\gcc\\avr\\7.3.0\\include",
+                "c:\\users\\oliver baumgartner\\downloads\\arduino-1.8.13\\hardware\\tools\\avr\\lib\\gcc\\avr\\7.3.0\\include-fixed",
+                "c:\\users\\oliver baumgartner\\downloads\\arduino-1.8.13\\hardware\\tools\\avr\\avr\\include"
+            ],
             "forcedInclude": [
-                "D:\\Programme\\Arduino\\arduino-1.8.13\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
+                "C:\\Users\\Oliver Baumgartner\\Downloads\\arduino-1.8.13\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
             ],
             "cStandard": "c11",
             "cppStandard": "c++11",
