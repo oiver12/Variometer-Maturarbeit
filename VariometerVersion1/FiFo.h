@@ -24,14 +24,12 @@
 #if !defined(FIFO_H)
 #define FIFO_H
 
-#include "Types.h"
-
 template <class ELEMENT, int BufferSize> class CFiFo  
 {
 	
 public:
 	
-	typedef UINT32 POSITION;
+	typedef unsigned long POSITION;
 
 	CFiFo(void)
 	{
@@ -96,18 +94,6 @@ public:
 		return true;
 	}
 	
-	bool PutOverAndGetPosition(ELEMENT Element, long& Position) 
-	{ 
-		while (!Put(Element))
-		{
-			ELEMENT ElementToDelete;
-			Get(ElementToDelete); 
-		}
-		
-		Position = m_InIdx-1;
-		return true;
-	}
-	
 	
 	
 	// ********************************************************************************************
@@ -131,7 +117,7 @@ public:
 		m_bInIncremented = false;
 		Element = m_Buffer[m_OutIdx];
 
-		UINT32 Idx = m_OutIdx;
+		unsigned long Idx = m_OutIdx;
 		m_OutIdx = (m_OutIdx+1)%BufferSize;
 		if(m_TrendPos == Idx) // also move TrendPos
 		{
@@ -280,7 +266,7 @@ public:
 	// Modifications:	Creation BEC GmbH MB	
 	//			
 	// ********************************************************************************************
-	UINT32 GetFillSize() // Returns the absolut fill level of the fifo (not percent)
+	unsigned long GetFillSize() // Returns the absolut fill level of the fifo (not percent)
 	{
 		if(m_InIdx == m_OutIdx)
 		{
@@ -304,49 +290,6 @@ public:
 		}
 	}
 	
-	// ********************************************************************************************
-	// Function name:	FindCount()
-	//									
-	// Description:		Returns the POSITION (pointer) with the count relative to the HeadPosition.
-	//					E.g. if count is 0 the return POSITION will be the Headposition.
-	//					If count is larger than the FillSize, the return POSITION will be the EndPosition.
-	//									
-	// Modifications:	Creation BEC GmbH MB	
-	//			
-	// ********************************************************************************************
-	POSITION FindCount(UINT32 Count)
-	{
-		if(Count>=GetFillSize()) // Since Count is larger than FillSize return the last element
-		{
-			return m_InIdx;
-		}
-		
-		return ((m_OutIdx+Count)%BufferSize);
-	}
-	
-	// ********************************************************************************************
-	// Function name:	FindReverseCount()
-	//									
-	// Description:		Returns the POSITION (pointer) with the count reverse to the EndPosition.
-	//					E.g. if count is 0 the return POSITION will be the Endposition.
-	//					If count is larger than the FillSize, the return POSITION will be the HeadPosition.
-	//									
-	// Modifications:	Creation BEC GmbH MB	
-	//			
-	// ********************************************************************************************
-	POSITION FindReverseCount(UINT32 Count)
-	{
-		if(Count>=GetFillSize()) // Since Count is larger than FillSize return the last element
-		{
-			return m_OutIdx;
-		}
-		
-		if(m_InIdx>=Count)
-		{
-			return (m_InIdx-Count);
-		}
-		return (BufferSize-Count+m_InIdx);
-	}
 	
 	// ********************************************************************************************
 	// Function name:	SetReverseCount()
@@ -358,7 +301,7 @@ public:
 	// Modifications:	Creation BEC GmbH MB	
 	//			
 	// ********************************************************************************************
-	bool SetReverseCount(UINT32 Count)
+	bool SetReverseCount(unsigned long Count)
 	{
 		if(Count>=GetFillSize()) // Since Count is larger than FillSize return the last element
 		{
@@ -375,21 +318,6 @@ public:
 		return true;
 	}
 	
-	// verify modified Idx, return true when Idx is valid
-	bool seek(unsigned int& Idx)
-	{
-		Idx = (Idx + BufferSize) % BufferSize; // fit to buffer
-		if((m_InIdx == m_OutIdx) && !m_bInIncremented) return false; // queue is empty
-		if(m_InIdx > m_OutIdx) 
-		{
-			if((Idx < m_OutIdx) || (Idx >= m_InIdx)) return false; // invalid Idx
-		}
-		else
-		{
-			if((Idx >= m_InIdx) && (Idx <= m_OutIdx)) return false; // invalid Idx (return false on last entry)
-		}
-		return true;
-	}
 
 	// return element at index
 	void peek(unsigned int Idx,ELEMENT& Element)
@@ -406,8 +334,8 @@ public:
 
 
 protected:
-	UINT32		m_OutIdx;				// index of the oldest element
-	UINT32		m_InIdx;				// index for inserting a new element
+	unsigned long		m_OutIdx;				// index of the oldest element
+	unsigned long		m_InIdx;				// index for inserting a new element
 	POSITION	m_TrendPos;				// current positon for GetNext()
 	bool		m_bInIncremented;		// false if queue is empty
 	ELEMENT		m_Buffer[BufferSize];

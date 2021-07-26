@@ -2,6 +2,9 @@
 #include <SPI.h>
 #include <SD.h>
 #include <SoftwareSerial.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
 
 const int lengthLastDates = 25;
 
@@ -32,6 +35,7 @@ const int chipSelect = 10;
 
 //LinearRegression lr = LinearRegression();
 Dps310 Dps310PressureSensor = Dps310();
+Adafruit_MPU6050 mpu;
 
 void setup()
 {
@@ -39,6 +43,13 @@ void setup()
   while (!Serial);
   Serial.println("Start");
   Dps310PressureSensor.begin(Wire);
+  // Try to initialize!
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) {
+      delay(10);
+    }
+  }
 
   Serial.print("Initializing SD card...");
 
