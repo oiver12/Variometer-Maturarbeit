@@ -4,6 +4,18 @@
 #include "Variometer.h"
 #include "FiFo.h"
 
+//#define logSDCard
+
+#ifdef logSDCard
+#include <SD.h>
+#include <SPI.h>
+File myFile;
+const int chipSelect = 10;
+int frequencyLog = 1; //all so und so Frame
+float lastTimeSDCard = 0;
+float lastPressureSDCard;
+#endif
+
 const int lengthLastDates = 25;
 
 bool hasStarted = false;
@@ -19,26 +31,32 @@ enum biepstate
 {
   low = 0,
   equal = 1,
-  up = 2,
-  upup = 3,
-  upupup = 4,
+  up1 = 2,
+  up2 = 3,
+  up3 = 4,
+  up4 = 5,
 };
-struct Tonestate{
-  biepstate state;
-  float frequency;
-  //Achtung duration = modulaCount --> kleiner und es werden mehr Töne pro Sekunde gespielt
-  int duration;
-  float lowerVelocity;
-  float upVelocity;
+class Tonestate{
+  public:
+    biepstate state;
+    float frequency;
+    //Achtung duration = modulaCount --> kleiner und es werden mehr Töne pro Sekunde gespielt
+    int duration;
+    float lowerVelocity;
+    float upVelocity;
 };
-Tonestate ToneArray[5] = {
+Tonestate ToneArray[6] = {
   {biepstate::low, 120, -1, -999, -2.5f},
-  {biepstate::equal, 0, 0, -2.5f, 0},
-  {biepstate::up, 800, 15, 0, 1.5f},
-  {biepstate::upup, 900, 12, 1.5f, 3.5f},
-  {biepstate::upupup, 1010, 8, 3.5f, 999},
+  {biepstate::equal, 0, 0, -2.5f, 0.1f},
+  {biepstate::up1, 700, 25, 0.1f, 1.5f},
+  {biepstate::up2, 850, 18, 1.5f, 3.5f},
+  {biepstate::up3, 1000, 10, 3.5f, 10},
+  {biepstate::up4, 1600, 3, 10, 999},
 };
-Tonestate state = ToneArray[1];
+int indexCurrentToneArray = 1;
+
+float frequencyNow = 0;
+int durationNow = 0;
 int deltaTimeFrame = 30;
 unsigned int count = 0;
 
@@ -54,12 +72,15 @@ void setup()
 {
 	Serial.begin(115200);
 	while (!Serial);
-	Serial.println("Start");
 	Dps310PressureSensor.begin(Wire);
-
-	Serial.print("Initializing SD card...");
-
-	Serial.println("Init complete!");
+	#ifdef logSDCard
+	if (!SD.begin())
+  	{
+	  return;
+  	}
+	SD.remove("data.txt");
+  	myFile = SD.open("data.txt", FILE_WRITE);
+	#endif
 	BTserial.begin(9600);
 }
 
@@ -74,31 +95,37 @@ void loop()
   }
   else
   {
-     if (BTserial.available() > 0) //if(Serial.available() > 0)
+     //if (BTserial.available() > 0) 
+	 if(Serial.available() > 0)
      {
-		 Serial.println("Here");
+		//Serial.println("Here");
         // read the incoming byte:
-        char incomingByte = (char)BTserial.read();
-		//char incomingByte = (char)Serial.read();
+        //char incomingByte = (char)BTserial.read();
+		char incomingByte = (char)Serial.read();
         if(incomingByte == 's')
         {
     		lastTemp = readTemperatur(10);
-    		startHeight = BTserial.parseInt();
-			//startHeight = Serial.parseFloat();
+    		//startHeight = BTserial.parseInt();
+			startHeight = Serial.parseFloat();
     		float startPressure = ReadPressure(10);
     		hasStarted = true;
 			variometer.init(1, startPressure, lastTemp, startHeight);
-      		Serial.println("Start mit reduziertem Luftdruck von: " + String(variometer.reduzierterLuftdruckStart) + "Luftdruck von: " + String(startPressure));
       		BTserial.println("Start mit reduziertem Luftdruck von: " + String(variometer.reduzierterLuftdruckStart) + "Luftdruck von: " + String(startPressure) + "Temp: " + String(lastTemp));
+			#ifdef logSDCard
+			if(myFile)
+			{
+				myFile.println("Start " + String(millis()) + ";" + String(startPressure) + ";" + String(startHeight) + ";" + String(lastTemp));
+			}
+			#endif
         }
      }
      if(hasStarted)
      {	
-  		if (BTserial.available() > 0)
-		//if(Serial.available() > 0)
+  		//if (BTserial.available() > 0)
+		if(Serial.available() > 0)
   		 {
-  			char incomingChar = (char)BTserial.read();
-			//char incomingChar = (char)Serial.read();
+  			//char incomingChar = (char)BTserial.read();
+			char incomingChar = (char)Serial.read();
   			 Serial.println(incomingChar);
   			 if (incomingChar == 'c')
   			 {
@@ -109,35 +136,10 @@ void loop()
   		 }
 		 if(millis() - lastTimeVelocity >= velocityMeasureRate)
 		 {
-			//Serial.println("n:" + String(variometer.getLinearRegression().getN()) + " sumMeanX:" + String(variometer.getLinearRegression().getSumMeanX()) + " sumMeanY:" + String(variometer.getLinearRegression().getSumMeanY()) + " sumMeanXY: " + String(variometer.getLinearRegression().getSumMeanXY()) + " sumMeanXYSq: " + String(variometer.getLinearRegression().getSumMeanXYSq()) + " m: " + String(variometer.getLinearRegression().getSlope()));
-			/*for (size_t i = 0; i <	5; i++)
-			{
-				Serial.print(String(variometer.getLinearRegression().bufferX[i]) + ";");
-			}
-			Serial.print("\n");*/
-			 //Serial.println(testSecond);
-			 //Serial.println(millis() - lastTimeVelocity);
 			lastTemp = readTemperatur(3);
 			lastVelocity = variometer.getVelocitySinceLast();
-			
-			if(!(lastVelocity >= state.lowerVelocity && lastVelocity <= state.upVelocity))
-			{
-				for (size_t i = 0; i < sizeof(ToneArray)/sizeof(Tonestate); i++)
-				{ 
-					if(lastVelocity >= ToneArray[i].lowerVelocity && lastVelocity <= ToneArray[i].upVelocity)
-					{
-						state = ToneArray[i];
-						Serial.println(String(state.state));
-					}
-				}
-				if(state.state == biepstate::low)
-					tone(8, state.frequency);
-				if(state.state == biepstate::equal)
-					noTone(8);
-			}
-			bool first = lastVelocity >= state.lowerVelocity;
-			bool second = lastVelocity <= state.upVelocity;
-			Serial.println(String(lastVelocity) + "  " + String(state.lowerVelocity) + "  " + String(state.upVelocity) + "  " + String(first) + "  " + String(second) + " " + String(first && second));
+			setNewBeep();
+			Serial.println(String(lastVelocity));
 			lastTimeVelocity = millis();
 			if(millis() - lastTimeSet >= baseSetRate)
 			{
@@ -147,15 +149,56 @@ void loop()
 				lastTimeSet = millis();
 				Serial.println("New Base Set");
 			}
+			#ifdef logSDCard
+			if(myFile)
+			{
+				myFile.println("v" + String(lastVelocity) + ";" + String(lastTemp) + ";" + String(frequencyNow)+ ";" + String(durationNow));
+			}
+			#endif
 		 }
 		variometer.addSample(lastPressure, millis()/static_cast<double>(1000));
-		if(state.state != biepstate::low && state.state != biepstate::equal && count%state.duration == 0)
+		if(ToneArray[indexCurrentToneArray].state != biepstate::low && ToneArray[indexCurrentToneArray].state != biepstate::equal && count%durationNow == 0)
 		{
-			tone(8, state.frequency, (deltaTimeFrame*state.duration)/2);
+			tone(8, frequencyNow, (deltaTimeFrame*durationNow)/2);
 		}
+		#ifdef logSDCard
+		if(myFile && count%frequencyLog == 0)
+		{
+			 myFile.println(String(millis() - lastTimeSDCard) + ';' + String(lastPressure - lastPressureSDCard));
+  			 lastTimeSDCard = millis();
+  			 lastPressureSDCard = lastPressure;
+		}
+		#endif
 		count++;
      }
   }
+}
+
+void setNewBeep()
+{
+  int lengthTonestate = sizeof(ToneArray)/sizeof(Tonestate);
+  for (size_t i = 0; i < lengthTonestate; i++)
+  {
+    if(lastVelocity >= ToneArray[i].lowerVelocity && lastVelocity <= ToneArray[i].upVelocity)
+    {
+      indexCurrentToneArray = i;
+      if((lengthTonestate - 1) == i)
+      {
+        frequencyNow = ToneArray[indexCurrentToneArray].frequency;
+        durationNow = ToneArray[indexCurrentToneArray].duration;
+      }
+      else
+      {
+        float factor = (lastVelocity - ToneArray[indexCurrentToneArray].lowerVelocity)/(ToneArray[indexCurrentToneArray].upVelocity-ToneArray[indexCurrentToneArray].lowerVelocity);
+        frequencyNow = factor * (ToneArray[i+1].frequency - ToneArray[indexCurrentToneArray].frequency) + ToneArray[indexCurrentToneArray].frequency;
+        durationNow = factor * (ToneArray[i+1].duration - ToneArray[indexCurrentToneArray].duration) + ToneArray[indexCurrentToneArray].duration;
+      }
+    }
+  }
+  if(ToneArray[indexCurrentToneArray].state == biepstate::low)
+      tone(8, ToneArray[indexCurrentToneArray].frequency);
+    if(ToneArray[indexCurrentToneArray].state == biepstate::equal)
+      noTone(8);
 }
 
 float ReadPressure(int oversampling)

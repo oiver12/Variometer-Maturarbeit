@@ -1,6 +1,6 @@
 #include "LinearRegression.h"
 #include "Variometer.h"
-#include <math.h> 
+#include <Arduino.h>
 
 void Variometer::init(int countMean, float startPressure, float startTemp, float startHeight)
 {
