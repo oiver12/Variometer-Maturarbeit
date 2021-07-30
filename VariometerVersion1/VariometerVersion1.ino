@@ -95,18 +95,18 @@ void loop()
   }
   else
   {
-     //if (BTserial.available() > 0) 
-	 if(Serial.available() > 0)
+     if (BTserial.available() > 0) 
+	 //if(Serial.available() > 0)
      {
 		//Serial.println("Here");
         // read the incoming byte:
-        //char incomingByte = (char)BTserial.read();
-		char incomingByte = (char)Serial.read();
+        char incomingByte = (char)BTserial.read();
+		//char incomingByte = (char)Serial.read();
         if(incomingByte == 's')
         {
     		lastTemp = readTemperatur(10);
-    		//startHeight = BTserial.parseInt();
-			startHeight = Serial.parseFloat();
+    		startHeight = BTserial.parseInt();
+			//startHeight = Serial.parseFloat();
     		float startPressure = ReadPressure(10);
     		hasStarted = true;
 			variometer.init(1, startPressure, lastTemp, startHeight);
@@ -121,11 +121,11 @@ void loop()
      }
      if(hasStarted)
      {	
-  		//if (BTserial.available() > 0)
-		if(Serial.available() > 0)
+  		if (BTserial.available() > 0)
+		//if(Serial.available() > 0)
   		 {
-  			//char incomingChar = (char)BTserial.read();
-			char incomingChar = (char)Serial.read();
+  			char incomingChar = (char)BTserial.read();
+			//char incomingChar = (char)Serial.read();
   			 Serial.println(incomingChar);
   			 if (incomingChar == 'c')
   			 {
@@ -140,6 +140,7 @@ void loop()
 			lastVelocity = variometer.getVelocitySinceLast();
 			setNewBeep();
 			Serial.println(String(lastVelocity));
+			BTserial.println(String(lastVelocity));
 			lastTimeVelocity = millis();
 			if(millis() - lastTimeSet >= baseSetRate)
 			{
