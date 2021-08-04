@@ -1,10 +1,14 @@
 #include <SoftwareSerial.h>
 #include "BluetoothCommunication.h"
 #include "CRC8.h"
+#include "PacketHandler.h"
 
 SoftwareSerial BTserial(2, 3); // RX | TX
 BluetoothCommunication bluetooth = BluetoothCommunication();
 uint8_t bluetoothRecieveBuffer[20];
+int indexRecieveBuffer = 0;
+bool packetStarted = false;
+float startHeight;
 
 void setup() 
 {
@@ -34,7 +38,9 @@ void loop()
  
     if (BTserial.available())
     {  
-        Serial.write(BTserial.read());
+        char incomingByte = BTserial.read();
+        addByteToPacket(incomingByte);
+        Serial.println(String((uint8_t)incomingByte) + " Byte");
     }
  
     if (Serial.available())
@@ -42,18 +48,59 @@ void loop()
 		char c = Serial.read();
 		if(c == 's')
         {
-            bluetooth.newPacket(arduinoPacketTypes::updateState);
+            /*bluetooth.newPacket(arduinoPacketTypes::updateState);
             bluetooth.addFloat(9234.34f);
             bluetooth.addFloat(1400.0f);
-            int size = 0;
-            char *pointerToFirst = bluetooth.getString(&size);
-            *(pointerToFirst+3) =  23;
-            for (size_t i = 0; i < size; i++)
-            {
-                Serial.write(*(pointerToFirst+i));
-                BTserial.write(*(pointerToFirst+i));
-            }
+            sendPacket();*/
+            uint8_t first = startByte;
+            uint8_t second = 5;
+            BTserial.write(first);
+            BTserial.write(second);
         }
     }
- 
+}
+
+//nur aufrufen wenn Packet ready ist in der Bluetooth Klasse
+void sendPacket()
+{
+    int size = 0;
+    char *pointerToFirst = bluetooth.getString(&size);
+    for (size_t i = 0; i < size; i++)
+    {
+        BTserial.write(*(pointerToFirst+i));
+    }
+}
+
+void addByteToPacket(char byte)
+{
+    if(!packetStarted)
+    {
+        indexRecieveBuffer = 0;
+        if((uint8_t)byte != startByte)
+        {
+            Serial.println("Erstes Byte war nicht startByte");
+            packetStarted = false;
+            return;
+        }
+        Serial.println("Packet started!");
+        packetStarted = true;
+    }
+    bluetoothRecieveBuffer[indexRecieveBuffer] = byte;
+    indexRecieveBuffer++;
+    if(packetStarted && indexRecieveBuffer >= 1 && bluetooth._flutterPackets[(uint8_t)bluetoothRecieveBuffer[1]].lengthPacket == indexRecieveBuffer)
+    {
+        Serial.println("Packet ended");
+        bluetooth.readPacket(bluetoothRecieveBuffer, indexRecieveBuffer);
+        packetStarted = false;
+        indexRecieveBuffer = 0;
+    }
+}
+
+void PacketHandler::StartVariometer(float height)
+{
+    bluetooth.newPacket(arduinoPacketTypes::startPacket);
+    bluetooth.addFloat(83942.43f);
+    bluetooth.addFloat(15.23f);
+    sendPacket();
+    startHeight = height;
 }

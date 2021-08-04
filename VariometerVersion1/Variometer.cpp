@@ -2,6 +2,7 @@
 #include "Variometer.h"
 #include <Arduino.h>
 
+//Stat des Variometers redzierter Luftdruck wird ausgerechent
 void Variometer::init(int countMean, float startPressure, float startTemp, float startHeight)
 {
 	this->startPressure = startPressure;
@@ -19,10 +20,13 @@ void Variometer::addSample(double pressure, double time)
 {
 	if (gleitenderDurchschnitt)
 	{
+		//die Summe wird der letzten Messungen wird gespeichert, die neuste Messung wird zur Summe hinzugefügt,
+		//die älteste Messung wird vom Fifo genommen und von der Summe abgezogen
 		meanPressureSum += pressure;
 		meanTimeSum += time;
 		if (lastPressures.isFull())
 		{
+			//Höhendifferenz ausrechnen und zur Linearen Regression hinzufügen -->lr.learn
 			float lastPressure = 0.0;
 			float lastTime = 0.0;
 			lastPressures.Get(lastPressure);
@@ -33,13 +37,15 @@ void Variometer::addSample(double pressure, double time)
 			float meanTime = meanTimeSum / lengthGeleitenderDurchschnitt;
 			float height = getHeightDifferenz(meanPressure, baseTemp, 0);
 
-			lr.learn(meanTime, height);
+			lr.addPoint(meanTime, height);
 		}
+		//ältestes Resultat im FiFo überschreiben
 		lastPressures.PutOver(pressure);
 		lastTimes.PutOver(time);
 	}
 	else
 	{
+		//bei Durchschnitt die Summe der letzten Messungen nehmen und dann wieder neu anfangen
 		n++;
 		meanPressureSum = meanPressureSum + pressure;
 		meanTimeSum = meanTimeSum + time;
@@ -48,7 +54,7 @@ void Variometer::addSample(double pressure, double time)
 			meanPressureSum /= n;
 			meanTimeSum /= n;
 			double height = getHeightDifferenz(meanPressureSum, baseTemp, 0);
-			lr.learn(meanTimeSum, height);
+			lr.addPoint(meanTimeSum, height);
 			meanPressureSum = 0;
 			meanTimeSum = 0;
 			n = 0;
@@ -56,6 +62,7 @@ void Variometer::addSample(double pressure, double time)
 	}
 }
 
+//zum Debuggen
 LinearRegression Variometer::getLinearRegression()
 {
 	return lr;
@@ -63,6 +70,8 @@ LinearRegression Variometer::getLinearRegression()
 
 float Variometer::getVelocitySinceLast()
 {
+	//bekommen der Geschwindigkeit durch die lineare Regression und dann wieder alles zurücksetzten,
+	//dass neu angefangen werden kann
 	float slope = lr.getSlope();
 	lr.reset();
 	meanPressureSum = 0;
@@ -75,10 +84,12 @@ float Variometer::getVelocitySinceLast()
 
 void Variometer::setNewBase(double newPressure, double newTemp)
 {
+	//neue Basis setzten
 	basePressure = newPressure;
 	baseTemp = newTemp;
 }
 
+//Höhendifferenz zur Baishöhe bekommen --> Methode 0 benutzt
 float Variometer::getHeightDifferenz(float pressure, float temperature, int method)
 {
 	if (method == 0)
