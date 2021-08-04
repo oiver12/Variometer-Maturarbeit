@@ -6,6 +6,7 @@
 
 //#define logSDCard
 
+//wenn der Flug auf der SD Karte aufgezeichnet werden soll kann das hier aktiviert werden
 #ifdef logSDCard
 #include <SD.h>
 #include <SPI.h>
@@ -16,17 +17,26 @@ float lastTimeSDCard = 0;
 float lastPressureSDCard;
 #endif
 
-const int lengthLastDates = 25;
-
+//ob das Variometer gestartet wurde über die App
 bool hasStarted = false;
+//start Höche von der App
 float startHeight;
+//das letzte Mal als die Geschwindigkiet gemessen wurde
 float lastTimeVelocity = 0;
+//letzer gemessener Druck
 double lastPressure;
+//letzer gemessener Temperatur
 double lastTemp;
+//letztes Mal als Basishöhe für Höhendifferenz gesetzt wurde sonst wird es nach einer Zeit ungenau, weiss nicht genau wieso
 double lastTimeSet;
+//all wie viele Milisekunden die Basishöhe für die Höhendifferenz gesetzt werden soll
 double baseSetRate = 20000;
-float velocityMeasureRate = 1000;
+//wie oft die Geschwindigkeit bestimmt werden soll
+float velocityMeasureRate = 500;
 
+//es gibt verschiedene biepen für die Höhenangabe low hat konstanten tiefen Ton, equal hat keinen Ton
+//die oberen Töne können eingestellt werden mit Frequenc vom Ton und Töne pro Sekunde zwischen den States wird
+//linear gemacht
 enum biepstate
 {
   low = 0,
@@ -45,6 +55,7 @@ class Tonestate{
     float lowerVelocity;
     float upVelocity;
 };
+//gesetzt wird untere Frequenc und all wie vielten Frame gepiept werden soll
 Tonestate ToneArray[6] = {
   {biepstate::low, 120, -1, -999, -2.5f},
   {biepstate::equal, 0, 0, -2.5f, 0.1f},
@@ -54,18 +65,20 @@ Tonestate ToneArray[6] = {
   {biepstate::up4, 1600, 3, 10, 999},
 };
 int indexCurrentToneArray = 1;
-
+//benötigt um zu biepen --> nur einmal ausrechnen wenn Geschwindigkiet gesetzt wird
 float frequencyNow = 0;
 int durationNow = 0;
 int deltaTimeFrame = 30;
 unsigned int count = 0;
 
+//letzte gemessene Geschwindigkeit
 float lastVelocity = 0.0f; //in m/s
 
+//Objekt für den Bluethoot Controller
 SoftwareSerial BTserial(2, 3); // RX | TX
 
-
 Variometer variometer = Variometer();
+//Objekt für Luftdrucksensor
 Dps310 Dps310PressureSensor = Dps310();
 
 void setup()
@@ -74,6 +87,7 @@ void setup()
 	while (!Serial);
 	Dps310PressureSensor.begin(Wire);
 	#ifdef logSDCard
+	//wenn der Arduino gestartet wird, wird altes File gelöscht und neues kreiert
 	if (!SD.begin())
   	{
 	  return;
@@ -88,93 +102,102 @@ void setup()
 
 void loop()
 {
-  lastPressure = ReadPressure(1);
-  if (lastPressure == 0)
-  {
-	  return;
-  }
-  else
-  {
-     if (BTserial.available() > 0) 
-	 //if(Serial.available() > 0)
-     {
-		//Serial.println("Here");
-        // read the incoming byte:
-        char incomingByte = (char)BTserial.read();
-		//char incomingByte = (char)Serial.read();
-        if(incomingByte == 's')
-        {
-    		lastTemp = readTemperatur(10);
-    		startHeight = BTserial.parseInt();
-			//startHeight = Serial.parseFloat();
-    		float startPressure = ReadPressure(10);
-    		hasStarted = true;
-			variometer.init(1, startPressure, lastTemp, startHeight);
-      		BTserial.println("Start mit reduziertem Luftdruck von: " + String(variometer.reduzierterLuftdruckStart) + "Luftdruck von: " + String(startPressure) + "Temp: " + String(lastTemp));
-			#ifdef logSDCard
-			if(myFile)
-			{
-				myFile.println("Start " + String(millis()) + ";" + String(startPressure) + ";" + String(startHeight) + ";" + String(lastTemp));
-			}
-			#endif
-        }
-     }
-     if(hasStarted)
-     {	
-  		if (BTserial.available() > 0)
+	//neuer Druck messen einmal
+	lastPressure = ReadPressure(1);
+	if (lastPressure == 0)
+	{
+		//etwas ist schifgelaufen
+		return;
+	}
+	else
+	{
+		if (BTserial.available() > 0) 
 		//if(Serial.available() > 0)
-  		 {
-  			char incomingChar = (char)BTserial.read();
-			//char incomingChar = (char)Serial.read();
-  			 Serial.println(incomingChar);
-  			 if (incomingChar == 'c')
-  			 {
-  				 hasStarted = false;
-  				 BTserial.println("done.");
-  				 return;
-  			}
-  		 }
-		 if(millis() - lastTimeVelocity >= velocityMeasureRate)
-		 {
-			lastTemp = readTemperatur(3);
-			lastVelocity = variometer.getVelocitySinceLast();
-			setNewBeep();
-			Serial.println(String(lastVelocity));
-			BTserial.println(String(lastVelocity));
-			lastTimeVelocity = millis();
-			if(millis() - lastTimeSet >= baseSetRate)
+		{
+			//Serial.println("Here");
+			// read the incoming byte:
+			char incomingByte = (char)BTserial.read();
+			//char incomingByte = (char)Serial.read();
+			if(incomingByte == 's')
 			{
-				lastTemp = readTemperatur(7);
-				lastPressure = ReadPressure(7);
-				variometer.setNewBase(lastPressure, lastTemp);
-				lastTimeSet = millis();
-				Serial.println("New Base Set");
+				lastTemp = readTemperatur(10);
+				startHeight = BTserial.parseInt();
+				//startHeight = Serial.parseFloat();
+				float startPressure = ReadPressure(10);
+				hasStarted = true;
+				variometer.init(1, startPressure, lastTemp, startHeight);
+				BTserial.println("Start mit reduziertem Luftdruck von: " + String(variometer.reduzierterLuftdruckStart) + "Luftdruck von: " + String(startPressure) + "Temp: " + String(lastTemp));
+				#ifdef logSDCard
+				if(myFile)
+				{
+					myFile.println("Start " + String(millis()) + ";" + String(startPressure) + ";" + String(startHeight) + ";" + String(lastTemp));
+				}
+				#endif
+			}
+		}
+		if(hasStarted)
+		{	
+			if (BTserial.available() > 0)
+			//if(Serial.available() > 0)
+			{
+				char incomingChar = (char)BTserial.read();
+				//char incomingChar = (char)Serial.read();
+				Serial.println(incomingChar);
+				if (incomingChar == 'c')
+				{
+					hasStarted = false;
+					BTserial.println("done.");
+					return;
+				}
+			}
+			//neue Geschwindigkiet ausrechnen
+			if(millis() - lastTimeVelocity >= velocityMeasureRate)
+			{
+				lastTemp = readTemperatur(3);
+				lastVelocity = variometer.getVelocitySinceLast();
+				setNewBeep();
+				Serial.println(String(lastVelocity));
+				BTserial.println(String(lastVelocity));
+				lastTimeVelocity = millis();
+				//neue Basishöhe setzten
+				//TODO nach einer Basissetzung ist die Geschwindigkeit immer tiefer als es sollte
+				if(millis() - lastTimeSet >= baseSetRate)
+				{
+					//sieben mal Temp und Druck messen und das als neue Basis setzten
+					lastTemp = readTemperatur(7);
+					lastPressure = ReadPressure(7);
+					variometer.setNewBase(lastPressure, lastTemp);
+					lastTimeSet = millis();
+					Serial.println("New Base Set");
+				}
+				#ifdef logSDCard
+				if(myFile)
+				{
+					myFile.println("v" + String(lastVelocity) + ";" + String(lastTemp) + ";" + String(frequencyNow)+ ";" + String(durationNow));
+				}
+				#endif
+			}
+			//neuer Druck und Zeit (in Sekunden) der Messung hinzufügen
+			variometer.addSample(lastPressure, millis()/static_cast<double>(1000));
+			//wenn es biepsen soll (nicht low oder equal) dann biepsen
+			if(ToneArray[indexCurrentToneArray].state != biepstate::low && ToneArray[indexCurrentToneArray].state != biepstate::equal && count%durationNow == 0)
+			{
+				tone(8, frequencyNow, (deltaTimeFrame*durationNow)/2);
 			}
 			#ifdef logSDCard
-			if(myFile)
+			if(myFile && count%frequencyLog == 0)
 			{
-				myFile.println("v" + String(lastVelocity) + ";" + String(lastTemp) + ";" + String(frequencyNow)+ ";" + String(durationNow));
+				myFile.println(String(millis() - lastTimeSDCard) + ';' + String(lastPressure - lastPressureSDCard));
+				lastTimeSDCard = millis();
+				lastPressureSDCard = lastPressure;
 			}
 			#endif
-		 }
-		variometer.addSample(lastPressure, millis()/static_cast<double>(1000));
-		if(ToneArray[indexCurrentToneArray].state != biepstate::low && ToneArray[indexCurrentToneArray].state != biepstate::equal && count%durationNow == 0)
-		{
-			tone(8, frequencyNow, (deltaTimeFrame*durationNow)/2);
+			count++;
 		}
-		#ifdef logSDCard
-		if(myFile && count%frequencyLog == 0)
-		{
-			 myFile.println(String(millis() - lastTimeSDCard) + ';' + String(lastPressure - lastPressureSDCard));
-  			 lastTimeSDCard = millis();
-  			 lastPressureSDCard = lastPressure;
-		}
-		#endif
-		count++;
-     }
-  }
+	}
 }
 
+//ausrechnen mit welcher Geschwindigkiet und Freqeunz gepiepst werden soll
 void setNewBeep()
 {
   int lengthTonestate = sizeof(ToneArray)/sizeof(Tonestate);
@@ -190,14 +213,17 @@ void setNewBeep()
       }
       else
       {
+		//linear zwischen zwei States machen
         float factor = (lastVelocity - ToneArray[indexCurrentToneArray].lowerVelocity)/(ToneArray[indexCurrentToneArray].upVelocity-ToneArray[indexCurrentToneArray].lowerVelocity);
         frequencyNow = factor * (ToneArray[i+1].frequency - ToneArray[indexCurrentToneArray].frequency) + ToneArray[indexCurrentToneArray].frequency;
         durationNow = factor * (ToneArray[i+1].duration - ToneArray[indexCurrentToneArray].duration) + ToneArray[indexCurrentToneArray].duration;
       }
     }
   }
+  //wenn low dann ein konstanter Ton tief
   if(ToneArray[indexCurrentToneArray].state == biepstate::low)
       tone(8, ToneArray[indexCurrentToneArray].frequency);
+	  //nicht biepsen wenn equal
     if(ToneArray[indexCurrentToneArray].state == biepstate::equal)
       noTone(8);
 }

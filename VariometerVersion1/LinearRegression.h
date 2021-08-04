@@ -1,9 +1,11 @@
 #ifndef LinearRegression_h
 #define LinearRegression_h
 
+//Lineare Regression, welche laufend geupdatet wird, dann durch getSlope kann die Geschwindigkiet
+//ausgelesen werden
 class LinearRegression {
 public:
-	void learn(double x, double y);
+	void addPoint(double x, double y);
 	void reset();
 	float getSlope();
 	float getN();

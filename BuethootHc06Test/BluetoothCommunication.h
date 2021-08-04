@@ -8,7 +8,8 @@ constexpr uint8_t startByte = 254;
 
 enum arduinoPacketTypes : uint8_t
 {
-	updateState = 0,
+	startPacket = 0,
+	updateState = 1,
 };
 
 class arduinoPackets
@@ -34,8 +35,11 @@ class flutterPackets
 
 class BluetoothCommunication {
 public:
-	arduinoPackets _arduinoPackets[1]{
+	arduinoPackets _arduinoPackets[2]{
 		//+3 für startByte + indexByte + crcByte = 3
+		//float: StartDruck, float: StartTemperatur
+		{arduinoPacketTypes::startPacket, (2*4 + 3)},
+		//float: Geschwindigkeit + float: neuer Druck
 		{arduinoPacketTypes::updateState, (2 * 4 + 3)},
 	};
 

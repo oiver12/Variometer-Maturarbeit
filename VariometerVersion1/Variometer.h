@@ -6,10 +6,14 @@
 
 constexpr int lengthGeleitenderDurchschnitt = 5;
 
+//Klasse um Durchschnitt bzw Gleitender Druchschnitt auszurechnen
 class Variometer {
 public:
+	//gleitender oder normaler Durchschnitt (gleitender genauer)
 	bool gleitenderDurchschnitt = true;
+	//reduzierter Luftdruck, welcher mit der Starthöhe ausgerechent wird
 	float reduzierterLuftdruckStart;
+	//Start des Variometers
 	void init(int countMean, float startPressure, float startTemp, float startHeight);
 	void addSample(double pressure, double time);
 	void setNewBase(double newPressure, double newTemp);
@@ -23,7 +27,7 @@ private:
 	float startPressure;
 	float basePressure;
 	float baseTemp;
-	//für gleitenderDurchschnitt
+	//für gleitenderDurchschnitt letzte Messungen werden gespeichert
 	CFiFo<float, lengthGeleitenderDurchschnitt> lastPressures;
 	CFiFo<float, lengthGeleitenderDurchschnitt> lastTimes;
 

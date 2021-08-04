@@ -1,5 +1,6 @@
 #include "BluetoothCommunication.h"
 #include "CRC8.h"
+#include "PacketHandler.h"
 
 void BluetoothCommunication::newPacket(arduinoPacketTypes packetType)
 {
@@ -12,12 +13,12 @@ void BluetoothCommunication::newPacket(arduinoPacketTypes packetType)
 void BluetoothCommunication::addByte(char byte)
 {
 	//ein zweites Mal dazu machen
-	if (byte == startByte)
+	/*if (byte == startByte)
 	{
 		buffer[indexEndBuffer] = byte;
 		indexEndBuffer++;
 		crc8.add(byte);
-	}
+	}*/
 	buffer[indexEndBuffer] = byte;
 	indexEndBuffer++;
 	crc8.add(byte);
@@ -55,8 +56,12 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	readByte(_packet, size, &crc);
 	for (size_t i = 1; i < size - 1; i++)
 	{
+		Serial.print((uint8_t)*(_packet+i));
+		Serial.print(";");
 		crc8.add(*(_packet + i));
 	}
+	Serial.println();
+	Serial.println(String((uint8_t)crc) + "  " + String((uint8_t)crc8.getCRC()));
 	Serial.println(crc == (char)crc8.getCRC());
 	if (!(crc == (char)crc8.getCRC()))
 		return false;
@@ -67,15 +72,14 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	uint8_t test = packetType;
 	if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::start)
 	{
-		float testFloat = 0;
-		readFloat(_packet, size, &testFloat);
-		float testByte = 0;
-		readFloat(_packet, size, &testByte);
-		Serial.println(String(testFloat) + "  " + String(testByte));
+		float startHeight = 0;
+		readFloat(_packet, size, &startHeight);
+		Serial.println("StartHeight: " + String(startHeight));
+		PacketHandler::StartVariometer(startHeight);
 	}
 	else if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::stop)
 	{
-
+		Serial.println("Vario ended");
 	}
 	else
 		return false;

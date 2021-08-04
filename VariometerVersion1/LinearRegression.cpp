@@ -1,8 +1,9 @@
 #include "LinearRegression.h"
 
-void LinearRegression::learn(double x, double y)
+//Lineare Regression, welche laufend geupdatet wird, dann durch getSlope kann die Geschwindigkiet
+//ausgelesen werden
+void LinearRegression::addPoint(double x, double y)
 {
-	//bufferX[n] = x;
 	n++;
 	sumMeanX = sumMeanX + x;
 	sumMeanY = sumMeanY + y;
@@ -21,6 +22,7 @@ float LinearRegression::getSlope()
 	return m;
 }
 
+//Zum debuggen
 float LinearRegression::getN()
 {
 	return n;
@@ -42,6 +44,7 @@ float LinearRegression::getSumMeanXYSq()
 	return sumMeanXYSq;
 }
 
+//alle Summen zurücksetzen
 void LinearRegression::reset()
 {
 	n = 0;
