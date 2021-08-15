@@ -56,15 +56,13 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	readByte(_packet, size, &crc);
 	for (size_t i = 1; i < size - 1; i++)
 	{
-		Serial.print((uint8_t)*(_packet+i));
-		Serial.print(";");
 		crc8.add(*(_packet + i));
 	}
-	Serial.println();
-	Serial.println(String((uint8_t)crc) + "  " + String((uint8_t)crc8.getCRC()));
-	Serial.println(crc == (char)crc8.getCRC());
 	if (!(crc == (char)crc8.getCRC()))
+	{
+		Serial.println("False CRC!");
 		return false;
+	}
 
 	readPos = 1;
 	char packetType = 0;

@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "cholesky.h": "c",
+        "compiler.h": "c"
+    }
+}

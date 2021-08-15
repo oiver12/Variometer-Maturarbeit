@@ -9,7 +9,7 @@ void Variometer::init(int countMean, float startPressure, float startTemp, float
 	this->countMean = countMean;
 	this->basePressure = startPressure;
 	this->baseTemp = startTemp;
-	this->reduzierterLuftdruckStart = startPressure / pow(1 - L * startHeight / ((startTemp + 273.15) + L * startHeight), 0.03416 / L);;
+	this->reduzierterLuftdruckStart = startPressure / pow(1 - L * startHeight / ((startTemp + 273.15) + L * startHeight), 0.03416 / L);
 	n = 0;
 	meanPressureSum = 0;
 	meanTimeSum = 0;

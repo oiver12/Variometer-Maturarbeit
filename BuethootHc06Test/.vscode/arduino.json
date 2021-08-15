@@ -3,5 +3,5 @@
     "board": "arduino:avr:nano",
     "programmer": "arduino:avrisp",
     "sketch": "BuethootHc06Test.ino",
-    "port": "COM5"
+    "port": "COM6"
 }

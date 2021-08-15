@@ -40,7 +40,6 @@ void loop()
     {  
         char incomingByte = BTserial.read();
         addByteToPacket(incomingByte);
-        Serial.println(String((uint8_t)incomingByte) + " Byte");
     }
  
     if (Serial.available())
@@ -48,14 +47,15 @@ void loop()
 		char c = Serial.read();
 		if(c == 's')
         {
-            /*bluetooth.newPacket(arduinoPacketTypes::updateState);
-            bluetooth.addFloat(9234.34f);
-            bluetooth.addFloat(1400.0f);
-            sendPacket();*/
-            uint8_t first = startByte;
+            Serial.println(startHeight);
+            /*uint8_t first = startByte;
             uint8_t second = 5;
             BTserial.write(first);
             BTserial.write(second);
+            bluetooth.newPacket(arduinoPacketTypes::updateState);
+            bluetooth.addFloat(9234.34f);
+            bluetooth.addFloat(1400.0f);
+            sendPacket();*/
         }
     }
 }
