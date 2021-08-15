@@ -2,6 +2,6 @@
     "configuration": "mode=on",
     "board": "arduino:megaavr:nona4809",
     "programmer": "arduino:avrisp",
-    "sketch": "VariometerVersion1.ino",
+    "sketch": "VariometerVersion2.ino",
     "port": "COM7"
 }

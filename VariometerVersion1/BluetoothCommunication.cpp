@@ -78,6 +78,7 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	else if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::stop)
 	{
 		Serial.println("Vario ended");
+		PacketHandler::StopVariometer();
 	}
 	else
 		return false;
@@ -129,7 +130,6 @@ char* BluetoothCommunication::getString(int *size)
 {
 	buffer[indexEndBuffer] = (char)crc8.getCRC();
 	indexEndBuffer++;
-	Serial.println(String(_arduinoPackets[buffer[1]].lengthPacket) + "  " + String(indexEndBuffer));
 	if(_arduinoPackets[buffer[1]].lengthPacket != indexEndBuffer)
 		Serial.println("Packet not correct length");
 	*size = indexEndBuffer;

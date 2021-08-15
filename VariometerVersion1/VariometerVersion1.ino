@@ -3,6 +3,9 @@
 #include "LinearRegression.h"
 #include "Variometer.h"
 #include "FiFo.h"
+#include "BluetoothCommunication.h"
+#include "CRC8.h"
+#include "PacketHandler.h"
 
 //#define logSDCard
 
@@ -76,6 +79,10 @@ float lastVelocity = 0.0f; //in m/s
 
 //Objekt für den Bluethoot Controller
 SoftwareSerial BTserial(2, 3); // RX | TX
+BluetoothCommunication bluetooth = BluetoothCommunication();
+uint8_t bluetoothRecieveBuffer[20];
+int indexRecieveBuffer = 0;
+bool packetStarted = false;
 
 Variometer variometer = Variometer();
 //Objekt für Luftdrucksensor
@@ -90,12 +97,14 @@ void setup()
 	//wenn der Arduino gestartet wird, wird altes File gelöscht und neues kreiert
 	if (!SD.begin())
   	{
+		  Serial.println("Failed to set SDCard");
 	  return;
   	}
 	SD.remove("data.txt");
   	myFile = SD.open("data.txt", FILE_WRITE);
 	#endif
 	BTserial.begin(9600);
+	Serial.println(readTemperatur(10));
 }
 
 
@@ -112,52 +121,26 @@ void loop()
 	else
 	{
 		if (BTserial.available() > 0) 
-		//if(Serial.available() > 0)
 		{
-			//Serial.println("Here");
-			// read the incoming byte:
-			char incomingByte = (char)BTserial.read();
-			//char incomingByte = (char)Serial.read();
-			if(incomingByte == 's')
-			{
-				lastTemp = readTemperatur(10);
-				startHeight = BTserial.parseInt();
-				//startHeight = Serial.parseFloat();
-				float startPressure = ReadPressure(10);
-				hasStarted = true;
-				variometer.init(1, startPressure, lastTemp, startHeight);
-				BTserial.println("Start mit reduziertem Luftdruck von: " + String(variometer.reduzierterLuftdruckStart) + "Luftdruck von: " + String(startPressure) + "Temp: " + String(lastTemp));
-				#ifdef logSDCard
-				if(myFile)
-				{
-					myFile.println("Start " + String(millis()) + ";" + String(startPressure) + ";" + String(startHeight) + ";" + String(lastTemp));
-				}
-				#endif
-			}
+			char incomingByte = BTserial.read();
+        	addByteToPacket(incomingByte);
 		}
+
 		if(hasStarted)
 		{	
-			if (BTserial.available() > 0)
-			//if(Serial.available() > 0)
-			{
-				char incomingChar = (char)BTserial.read();
-				//char incomingChar = (char)Serial.read();
-				Serial.println(incomingChar);
-				if (incomingChar == 'c')
-				{
-					hasStarted = false;
-					BTserial.println("done.");
-					return;
-				}
-			}
 			//neue Geschwindigkiet ausrechnen
 			if(millis() - lastTimeVelocity >= velocityMeasureRate)
 			{
 				lastTemp = readTemperatur(3);
 				lastVelocity = variometer.getVelocitySinceLast();
+				if(isfinite(lastVelocity) == 0)
+				{
+					Serial.println(String(lastVelocity) + "  " + "was not finit");
+					lastVelocity = 0;
+				}
 				setNewBeep();
 				Serial.println(String(lastVelocity));
-				BTserial.println(String(lastVelocity));
+				//BTserial.println(String(lastVelocity));
 				lastTimeVelocity = millis();
 				//neue Basishöhe setzten
 				//TODO nach einer Basissetzung ist die Geschwindigkeit immer tiefer als es sollte
@@ -170,6 +153,7 @@ void loop()
 					lastTimeSet = millis();
 					Serial.println("New Base Set");
 				}
+				sendUpdate();
 				#ifdef logSDCard
 				if(myFile)
 				{
@@ -195,6 +179,14 @@ void loop()
 			count++;
 		}
 	}
+}
+
+void sendUpdate()
+{
+	bluetooth.newPacket(arduinoPacketTypes::updateState);
+	bluetooth.addFloat(lastVelocity);
+	bluetooth.addFloat(lastPressure);
+	sendPacket();
 }
 
 //ausrechnen mit welcher Geschwindigkiet und Freqeunz gepiepst werden soll
@@ -228,37 +220,109 @@ void setNewBeep()
       noTone(8);
 }
 
+//nur aufrufen wenn Packet ready ist in der Bluetooth Klasse
+void sendPacket()
+{
+    int size = 0;
+    char *pointerToFirst = bluetooth.getString(&size);
+    for (size_t i = 0; i < size; i++)
+    {
+        BTserial.write(*(pointerToFirst+i));
+    }
+}
+
+void addByteToPacket(char byte)
+{
+    if(!packetStarted)
+    {
+        indexRecieveBuffer = 0;
+        if((uint8_t)byte != startByte)
+        {
+            Serial.println("Erstes Byte war nicht startByte");
+            packetStarted = false;
+            return;
+        }
+        Serial.println("Packet started!");
+        packetStarted = true;
+    }
+    bluetoothRecieveBuffer[indexRecieveBuffer] = byte;
+    indexRecieveBuffer++;
+    if(packetStarted && indexRecieveBuffer >= 1 && bluetooth._flutterPackets[(uint8_t)bluetoothRecieveBuffer[1]].lengthPacket == indexRecieveBuffer)
+    {
+        Serial.println("Packet ended");
+        bluetooth.readPacket(bluetoothRecieveBuffer, indexRecieveBuffer);
+        packetStarted = false;
+        indexRecieveBuffer = 0;
+    }
+}
+
+void PacketHandler::StartVariometer(float height)
+{
+	lastTemp = readTemperatur(10);
+	startHeight = height;
+	float startPressure = ReadPressure(10);
+	Serial.println(startPressure);
+	hasStarted = true;
+	variometer.init(1, startPressure, lastTemp, startHeight);
+	bluetooth.newPacket(arduinoPacketTypes::startPacket);
+    bluetooth.addFloat(startPressure);
+    bluetooth.addFloat(lastTemp);
+    sendPacket();
+	#ifdef logSDCard
+	if(myFile)
+	{
+		myFile.println("Start " + String(millis()) + ";" + String(startPressure) + ";" + String(startHeight) + ";" + String(lastTemp));
+	}
+	#endif
+}
+
+void PacketHandler::StopVariometer()
+{
+	hasStarted = false;
+}
+
+//es gibt Funktion oversampling bei measurePressureOnce, jedoch gibt es dort falsche Werte hinaus, z.B. bei Druck immer zu tiefe Werte
+//daher oversampling mit einer Loop selbst implementiert
 float ReadPressure(int oversampling)
 {
 	float pres;
 	//uint8_t oversampling = 1;
 	int16_t ret;
-	ret = Dps310PressureSensor.measurePressureOnce(pres, oversampling);
-	if (ret != 0)
+	float sumPres = 0;
+	for(int i = 0; i< oversampling; i++)
 	{
-		//Something went wrong.
-		//Look at the library code for more information about return codes
-		Serial.print("FAIL! ret = ");
-		Serial.println(ret);
-		return 0;
+		ret = Dps310PressureSensor.measurePressureOnce(pres, 1);
+		sumPres += pres;
+		if (ret != 0)
+		{
+			//Something went wrong.
+			//Look at the library code for more information about return codes
+			Serial.print("FAIL! ret = ");
+			Serial.println(ret);
+			return 0;
+		}
 	}
-	return pres;
+	return (sumPres/oversampling);
 }
 
 float readTemperatur(int oversampling)
 {
 	float temp;
-	//uint8_t oversampling = 1;
+	float sumTemp = 0;
 	int16_t ret;
-	ret = Dps310PressureSensor.measureTempOnce(temp, oversampling);
-	if (ret != 0)
+	for (size_t i = 0; i < oversampling; i++)
 	{
-		//Something went wrong.
-		//Look at the library code for more information about return codes
-		Serial.print("FAIL! ret = ");
-		Serial.println(ret);
-		return 0;
+		ret = Dps310PressureSensor.measureTempOnce(temp, 1);
+		sumTemp += temp;
+		if (ret != 0)
+		{
+			//Something went wrong.
+			//Look at the library code for more information about return codes
+			Serial.print("FAIL! ret = ");
+			Serial.println(ret);
+			return 0;
+		}
 	}
-	return temp;
+	return (sumTemp/oversampling);
 }
 
