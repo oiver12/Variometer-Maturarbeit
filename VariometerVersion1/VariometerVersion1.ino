@@ -35,7 +35,7 @@ double lastTimeSet;
 //all wie viele Milisekunden die Basishöhe für die Höhendifferenz gesetzt werden soll
 double baseSetRate = 20000;
 //wie oft die Geschwindigkeit bestimmt werden soll
-float velocityMeasureRate = 500;
+float velocityMeasureRate = 1000;
 
 //es gibt verschiedene biepen für die Höhenangabe low hat konstanten tiefen Ton, equal hat keinen Ton
 //die oberen Töne können eingestellt werden mit Frequenc vom Ton und Töne pro Sekunde zwischen den States wird
@@ -61,7 +61,7 @@ class Tonestate{
 //gesetzt wird untere Frequenc und all wie vielten Frame gepiept werden soll
 Tonestate ToneArray[6] = {
   {biepstate::low, 120, -1, -999, -2.5f},
-  {biepstate::equal, 0, 0, -2.5f, 0.1f},
+  {biepstate::equal, 0, 0, -2.5f, 0.15f},
   {biepstate::up1, 700, 25, 0.1f, 1.5f},
   {biepstate::up2, 850, 18, 1.5f, 3.5f},
   {biepstate::up3, 1000, 10, 3.5f, 10},
@@ -104,7 +104,6 @@ void setup()
   	myFile = SD.open("data.txt", FILE_WRITE);
 	#endif
 	BTserial.begin(9600);
-	Serial.println(readTemperatur(10));
 }
 
 
@@ -115,7 +114,7 @@ void loop()
 	lastPressure = ReadPressure(1);
 	if (lastPressure == 0)
 	{
-		//etwas ist schifgelaufen
+		//etwas ist schiefgelaufen
 		return;
 	}
 	else
@@ -262,6 +261,7 @@ void PacketHandler::StartVariometer(float height)
 	startHeight = height;
 	float startPressure = ReadPressure(10);
 	Serial.println(startPressure);
+	delay(100);
 	hasStarted = true;
 	variometer.init(1, startPressure, lastTemp, startHeight);
 	bluetooth.newPacket(arduinoPacketTypes::startPacket);

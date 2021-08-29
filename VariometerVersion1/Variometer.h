@@ -27,6 +27,7 @@ private:
 	float startPressure;
 	float basePressure;
 	float baseTemp;
+	float baseTime = 0;
 	//für gleitenderDurchschnitt letzte Messungen werden gespeichert
 	CFiFo<float, lengthGeleitenderDurchschnitt> lastPressures;
 	CFiFo<float, lengthGeleitenderDurchschnitt> lastTimes;

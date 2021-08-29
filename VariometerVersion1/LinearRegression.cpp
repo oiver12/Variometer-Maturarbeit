@@ -5,43 +5,16 @@
 void LinearRegression::addPoint(double x, double y)
 {
 	n++;
-	sumMeanX = sumMeanX + x;
-	sumMeanY = sumMeanY + y;
-	sumMeanXY = sumMeanXY + x * y;
-	sumMeanXYSq = sumMeanXYSq + x * x;
+	sumMeanX = sumMeanX + ((x - sumMeanX) / n);
+	sumMeanY = sumMeanY + ((y - sumMeanY) / n);
+	sumMeanXY = sumMeanXY + (((x*y) - sumMeanXY) / n);
+	sumMeanXSq = sumMeanXSq + (((x*x) - sumMeanXSq) / n);
 }
 
 float LinearRegression::getSlope()
 {
-	float xbar = sumMeanX / n;
-	float ybar = sumMeanY / n;
-	float xybar = sumMeanXY / n;
-	float xsqbar = sumMeanXYSq / n;
-
-	float m = (xybar - xbar * ybar) / (xsqbar - xbar * xbar);
+	float m = (sumMeanXY - sumMeanX * sumMeanY) / (sumMeanXSq - sumMeanX * sumMeanX);
 	return m;
-}
-
-//Zum debuggen
-float LinearRegression::getN()
-{
-	return n;
-}
-float LinearRegression::getSumMeanX()
-{
-	return sumMeanX;
-}
-float LinearRegression::getSumMeanY()
-{
-	return sumMeanY;
-}
-float LinearRegression::getSumMeanXY()
-{
-	return sumMeanXY;
-}
-float LinearRegression::getSumMeanXYSq()
-{
-	return sumMeanXYSq;
 }
 
 //alle Summen zurücksetzen
@@ -51,6 +24,6 @@ void LinearRegression::reset()
 	sumMeanX = 0;
 	sumMeanY = 0;
 	sumMeanXY = 0;
-	sumMeanXYSq = 0;
+	sumMeanXSq = 0;
 	//b = 0;
 }

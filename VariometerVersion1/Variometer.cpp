@@ -23,7 +23,7 @@ void Variometer::addSample(double pressure, double time)
 		//die Summe wird der letzten Messungen wird gespeichert, die neuste Messung wird zur Summe hinzugefügt,
 		//die älteste Messung wird vom Fifo genommen und von der Summe abgezogen
 		meanPressureSum += pressure;
-		meanTimeSum += time;
+		meanTimeSum += (time-baseTime);
 		if (lastPressures.isFull())
 		{
 			//Höhendifferenz ausrechnen und zur Linearen Regression hinzufügen -->lr.learn
@@ -87,6 +87,7 @@ void Variometer::setNewBase(double newPressure, double newTemp)
 	//neue Basis setzten
 	basePressure = newPressure;
 	baseTemp = newTemp;
+	baseTime = millis();
 }
 
 //Höhendifferenz zur Baishöhe bekommen --> Methode 0 benutzt
