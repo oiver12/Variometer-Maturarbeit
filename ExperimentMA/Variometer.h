@@ -4,6 +4,7 @@
 #include "LinearRegression.h"
 #include "FiFo.h"
 
+#define lengthLinearRegression 10
 constexpr int lengthGeleitenderDurchschnitt = 5;
 
 //Klasse um Durchschnitt bzw Gleitender Druchschnitt auszurechnen
@@ -16,7 +17,7 @@ public:
 	//Start des Variometers
 	void init(int countMean, float startPressure, float startTemp, float startHeight);
 	void addSample(double pressure, double time);
-	void deleteSample(double pressure, double time);
+	void deleteSample();
 	void setNewBase(double newPressure, double newTemp);
 	float getVelocitySinceLast();
 	float getHeightDifferenz(float pressure, float temperature, int method);
@@ -32,6 +33,8 @@ private:
 	CFiFo<float, lengthGeleitenderDurchschnitt> lastPressures;
 	CFiFo<float, lengthGeleitenderDurchschnitt> lastTimes;
 
+	CFiFo<float, lengthLinearRegression> allPressures;
+	CFiFo<float, lengthLinearRegression> allTimes;
 	float meanPressureSum = 0;
 	float meanTimeSum = 0;
 	LinearRegression lr = LinearRegression();

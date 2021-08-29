@@ -1,6 +1,6 @@
 #include "LinearRegression.h"
 #include "Variometer.h"
-#include <Arduino.h>
+#include <math.h>
 
 //Stat des Variometers redzierter Luftdruck wird ausgerechent
 void Variometer::init(int countMean, float startPressure, float startTemp, float startHeight)
@@ -38,6 +38,34 @@ void Variometer::addSample(double pressure, double time)
 			float height = getHeightDifferenz(meanPressure, baseTemp, 0);
 
 			lr.addPoint(meanTime, height);
+
+			allPressures.PutOver(height);
+			allTimes.PutOver(meanTime);
+
+			if (allPressures.isFull())
+			{
+				/*float test = lr.getSlope();
+				lr.addPoint(2334.0f, 234.0f);
+				test = lr.getSlope();
+				lr.deletePoint(2334.0f, 234.0f);
+				test = lr.getSlope();*/
+				/*float deletePressure;
+				float deleteTime;
+				allPressures.GetNext(deletePressure);
+				allTimes.GetNext(deleteTime);
+				lr.deletePoint(deletePressure, deleteTime);*/
+				lr.reset();
+				float pressureLr = 0;
+				float timelLr = 0;
+				allPressures.GetHeadPosition();
+				allTimes.GetHeadPosition();
+				for (size_t i = 0; i < lengthLinearRegression; i++)
+				{
+					allPressures.GetNext(pressureLr, i==0);
+					allTimes.GetNext(timelLr, i==0);
+					lr.addPoint(timelLr, pressureLr);
+				}
+			}
 		}
 		//ältestes Resultat im FiFo überschreiben
 		lastPressures.PutOver(pressure);
@@ -62,10 +90,6 @@ void Variometer::addSample(double pressure, double time)
 	}
 }
 
-void Variometer::deleteSample(double pressure, double time)
-{
-	lr.deletePoint(time, getHeightDifferenz(pressure, baseTemp, 0));
-}
 
 //zum Debuggen
 LinearRegression Variometer::getLinearRegression()
