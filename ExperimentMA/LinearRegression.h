@@ -14,13 +14,12 @@ public:
 	float getSumMeanY();
 	float getSumMeanXY();
 	float getSumMeanXYSq();
-	//double bufferX[5];
 private:
 	int n = 0;
 	float sumMeanX = 0;
 	float sumMeanY = 0;
 	float sumMeanXY = 0;
-	float sumMeanXYSq = 0;
+	float sumMeanXSq = 0;
 };
 
 #endif
