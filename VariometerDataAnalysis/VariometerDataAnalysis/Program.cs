@@ -83,7 +83,8 @@ namespace VariometerDataAnalysis
 			Excel.Application excelApp = new Excel.Application();
 			if (excelApp != null)
 			{
-				Excel.Workbook excelWorkbook = excelApp.Workbooks.Add();
+				excelApp.Visible = true;
+				Excel.Workbook excelWorkbook = excelApp.Workbooks.Add(Type.Missing);
 				Excel.Worksheet excelWorksheet = (Excel.Worksheet)excelWorkbook.Sheets.Add();
 				//excelWorksheet.Cells[1, 1] = "1";
 				for (int i = 0; i < values1.Length; i++)

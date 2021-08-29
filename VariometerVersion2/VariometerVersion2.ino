@@ -127,12 +127,25 @@ void loop() {
             sumAcc = 0.0f;
             countAcc = 0;
         }
+        float _c00, _c10, _c20, _c30, _c01, _c11, _c21 = 0;
+        float _scaled_rawtemp = 0;
+        float _pressure;
+
+        _pressure =
+            (int32_t)_c00 +
+            _pressure * ((int32_t)_c10 +
+            _pressure * ((int32_t)_c20 + _pressure * (int32_t)_c30)) +
+            _scaled_rawtemp *
+            ((int32_t)_c01 +
+            _pressure * ((int32_t)_c11 + _pressure * (int32_t)_c21));
+
         if (mpu.update()) {
             float q0 = mpu.getQuaternionW();
             float q1 = mpu.getQuaternionX();
             float q2 = mpu.getQuaternionY();
             float q3 = mpu.getQuaternionZ();
-            float acc = (2*(q1*q3 - q0*q2)) * mpu.getAccX() + (2*(q2*q3+q0*q1)) * mpu.getAccY() + (2*(q0*q0+q3*q3) -1)*mpu.getAccZ();
+            // accX minus da Madgwick hat X Beschleunigung minus
+            float acc = (2*(q1*q3 - q0*q2)) * -mpu.getAccX() + (2*(q2*q3+q0*q1)) * mpu.getAccY() + (2*(q0*q0+q3*q3) -1)*mpu.getAccZ();
             float gravityCompensatedAccel = (acc - 1.0f) / -0.980665f;
             sumAcc += gravityCompensatedAccel;
             countAcc++;
