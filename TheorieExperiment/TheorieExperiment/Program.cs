@@ -11,10 +11,10 @@ namespace TheorieExperiment
 	{
 		static void Main(string[] args)
 		{
-			const double std_a = 0.1;
-			const double std_h = 1;
-			const int n = 200;
-			const double dT = 5.0 / 1000.0;
+			const double std_a = 0.075;
+			const double std_h = 0.5;
+			const int n = 300;
+			const double dT = 0.05;
 			//double[] simAcc = new double[n];
 			//double[] simVel = new double[n];
 			//double[] simHei = new double[n];
@@ -23,52 +23,57 @@ namespace TheorieExperiment
 			double v = 0;
 			double h = 0;
 			double a = 0;
+			Random rand = new Random();
 			List<Tuple<float, float, float, float, float, float>> allValues = new List<Tuple<float, float, float, float, float, float>>(); //Zeit //SimHei //SimVel //SimAcce //measHei //measAcce
 			for (int i = 0; i < n; i++)
 			{
-				a = Math.Sin(Math.PI * (double)((double)i/(double)n)*2);
+				a = 0.3 * Math.Sin(Math.PI * (double)((double)i/(double)n)*4);
 				//simAcc[i] = a;
 				v += a * dT;
 				//simVel[i] = v;
 				h += v * dT + (a * dT * dT)/2;
 				//simHei[i] = h;
-				double measAcceleration = a + randomGauss(0, std_a);
-				double measHeight = h + randomGauss(0, std_h);
+				double measAcceleration = randomGauss(rand ,a, std_a);
+				//double measAcceleration = a;
+				double measHeight = randomGauss(rand, h, std_h);
 				allValues.Add(new Tuple<float, float, float, float, float, float>((float)i* (float)dT, (float)h, (float)v, (float)a, (float)measHeight, (float)measAcceleration));
 			}
+
+			System.Globalization.NumberFormatInfo nfi = new System.Globalization.NumberFormatInfo();
+			nfi.NumberDecimalSeparator = ".";
 			//Zeiten ausgeben um in Arduino zu kopieren
-			Console.Write("float times[" + allValues.Count.ToString() + "] = { ");
+			Console.Write("double times[" + allValues.Count.ToString() + "] = { ");
 			for (int i = 0; i < allValues.Count; i++)
 			{
-				Console.Write(allValues[i].Item1.ToString() + ", ");
+				Console.Write(allValues[i].Item1.ToString(nfi) + ", ");
 			}
 			Console.WriteLine(" };");
 
-			Console.Write("float measHeights[" + allValues.Count.ToString() + "] = { ");
+			Console.Write("double measHeights[" + allValues.Count.ToString() + "] = { ");
 			for (int i = 0; i < allValues.Count; i++)
 			{
-				Console.Write(allValues[i].Item5.ToString() + ", ");
+				Console.Write(allValues[i].Item5.ToString(nfi) + ", ");
 			}
 			Console.WriteLine(" };");
 
-			Console.Write("float measAccelerations[" + allValues.Count.ToString() + "] = { ");
+			Console.Write("double measAccelerations[" + allValues.Count.ToString() + "] = { ");
 			for (int i = 0; i < allValues.Count; i++)
 			{
-				Console.Write(allValues[i].Item6.ToString() + ", ");
+				Console.Write(allValues[i].Item6.ToString(nfi) + ", ");
 			}
 			Console.WriteLine(" };");
-			//WriteToExcel(allValues);
+			WriteToExcel(allValues);
 			Console.ReadKey();
 		}
 
-		static double randomGauss(double mean, double stdDev)
+		static double randomGauss(Random rand, double mean, double stdDev)
 		{
 			//https://stackoverflow.com/questions/218060/random-gaussian-variables
-			Random rand = new Random(); //reuse this if you are generating many
 			double u1 = 1.0 - rand.NextDouble(); //uniform(0,1] random doubles
 			double u2 = 1.0 - rand.NextDouble();
 			double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2); //random normal(0,1)
-			return mean + stdDev * randStdNormal; //random normal(mean,stdDev^2)
+			double randomGauss = mean + stdDev * randStdNormal; //random normal(mean,stdDev^2)
+			return randomGauss;
 		}
 
 		public static void WriteToExcel(List<Tuple<float, float, float, float, float, float>> values1)
