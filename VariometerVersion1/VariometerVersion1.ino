@@ -7,7 +7,7 @@
 #include "CRC8.h"
 #include "PacketHandler.h"
 
-//#define logSDCard
+#define logSDCard
 
 //wenn der Flug auf der SD Karte aufgezeichnet werden soll kann das hier aktiviert werden
 #ifdef logSDCard
@@ -95,7 +95,7 @@ void setup()
 	Dps310PressureSensor.begin(Wire);
 	#ifdef logSDCard
 	//wenn der Arduino gestartet wird, wird altes File gelöscht und neues kreiert
-	if (!SD.begin())
+	if (!SD.begin(chipSelect))
   	{
 		  Serial.println("Failed to set SDCard");
 	  return;

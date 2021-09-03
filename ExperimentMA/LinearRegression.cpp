@@ -5,18 +5,10 @@
 void LinearRegression::addPoint(double x, double y)
 {
 	n++;
-	/*sumMeanX = sumMeanX + x;
-	sumMeanY = sumMeanY + y;
-	sumMeanXY = sumMeanXY + x * y;
-	sumMeanXSq = sumMeanXSq + x * x;*/
 	sumMeanX = sumMeanX + ((x - sumMeanX) / n);
 	sumMeanY = sumMeanY + ((y - sumMeanY) / n);
 	sumMeanXY = sumMeanXY + (((x*y) - sumMeanXY) / n);
 	sumMeanXSq = sumMeanXSq + (((x*x) - sumMeanXSq) / n);
-	/*sumMeanX = sumMeanX * (n - 1) / n + x / n;
-	sumMeanY = sumMeanY * (n - 1) / n + y / n;
-	sumMeanXY = sumMeanXY * (n - 1) / n + (x*y) / n;
-	sumMeanXSq = sumMeanXSq * (n - 1) / n + (x*x) / n;*/
 }
 
 //not working
@@ -40,14 +32,6 @@ void LinearRegression::deletePoint(double x, double y)
 
 float LinearRegression::getSlope()
 {
-	/*float xbar = sumMeanX / n;
-	float ybar = sumMeanY / n;
-	float xybar = sumMeanXY / n;
-	float xsqbar = sumMeanXSq / n;
-
-	float m = (xybar - xbar * ybar) / (xsqbar - xbar * xbar);
-	return m;*/
-	//float m = (n*sumMeanXY - sumMeanX * sumMeanY) / (n*sumMeanXSq - sumMeanX * sumMeanX);
 	float m = (sumMeanXY - sumMeanX * sumMeanY) / (sumMeanXSq - sumMeanX * sumMeanX);
 	return m;
 }

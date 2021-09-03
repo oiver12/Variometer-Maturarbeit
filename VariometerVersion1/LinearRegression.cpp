@@ -5,15 +5,15 @@
 void LinearRegression::addPoint(double x, double y)
 {
 	n++;
-	sumMeanX = sumMeanX + ((x - sumMeanX) / n);
-	sumMeanY = sumMeanY + ((y - sumMeanY) / n);
-	sumMeanXY = sumMeanXY + (((x*y) - sumMeanXY) / n);
-	sumMeanXSq = sumMeanXSq + (((x*x) - sumMeanXSq) / n);
+	MeanX = MeanX + ((x - MeanX) / n);
+	MeanY = MeanY + ((y - MeanY) / n);
+	MeanXY = MeanXY + (((x*y) - MeanXY) / n);
+	MeanX2 = MeanX2 + (((x*x) - MeanX2) / n);
 }
 
 float LinearRegression::getSlope()
 {
-	float m = (sumMeanXY - sumMeanX * sumMeanY) / (sumMeanXSq - sumMeanX * sumMeanX);
+	float m = (MeanXY - MeanX * MeanY) / (MeanX2 - MeanX * MeanX);
 	return m;
 }
 
@@ -21,9 +21,9 @@ float LinearRegression::getSlope()
 void LinearRegression::reset()
 {
 	n = 0;
-	sumMeanX = 0;
-	sumMeanY = 0;
-	sumMeanXY = 0;
-	sumMeanXSq = 0;
+	MeanX = 0;
+	MeanY = 0;
+	MeanXY = 0;
+	MeanX2 = 0;
 	//b = 0;
 }
