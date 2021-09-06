@@ -1,5 +1,9 @@
 #include <MPU9250.h>
 #include <Dps310.h>
+#include <SoftwareSerial.h>
+#include "BluetoothCommunication.h"
+#include "CRC8.h"
+#include "PacketHandler.h"
 
 #include <Kalman.h>
 using namespace BLA;
@@ -72,6 +76,14 @@ bool hasStarted = false;
 float startHeight = 0;
 float startTemp = 0;
 float startPressure = 0;
+float lastPressure = 0;
+
+//Objekt für den Bluethoot Controller
+SoftwareSerial BTserial(2, 3); // RX | TX
+BluetoothCommunication bluetooth = BluetoothCommunication();
+uint8_t bluetoothRecieveBuffer[20];
+int indexRecieveBuffer = 0;
+bool packetStarted = false;
 
 
 void setup() 
@@ -80,8 +92,10 @@ void setup()
   Wire.begin();
   Dps310PressureSensor.begin(Wire);
   delay(2000);
-
-  if (!mpu.setup(0x68)) {  // change to your own address
+  MPU9250Setting settings  = MPU9250Setting();
+  settings.accel_fs_sel = ACCEL_FS_SEL::A4G;
+  settings.gyro_fs_sel = GYRO_FS_SEL::G500DPS;
+  if (!mpu.setup(0x68, settings)) { 
       while (1) {
           Serial.println("MPU connection failed.");
           delay(5000);
@@ -93,11 +107,15 @@ void setup()
   mpu.setMagBias(118.51035f, -78.3431f, -30.889767f);
   mpu.setMagScale(1.356725f, 0.7227414f, 1.137255f);
   delay(1000);
+  BTserial.begin(9600);
   //mpu.setFilterIterations(30);
   Serial.println("Begun");
   mpu.update();
+}
 
-  // time evolution matrix
+void StartKalman()
+{
+    // time evolution matrix
   K.F = {1.0, 0.0, 0.0,
           0.0, 1.0, 0.0,
           0.0, 0.0, 1.0};
@@ -119,6 +137,12 @@ void setup()
 }
 
 void loop() {
+    if (BTserial.available() > 0) 
+		{
+			char incomingByte = BTserial.read();
+      addByteToPacket(incomingByte);
+		}
+
     if(hasStarted)
     {
         if(!hasStartedDpsMeasure)
@@ -129,8 +153,7 @@ void loop() {
         }
         if(hasStartedDpsMeasure && millis() - lastTime >= waitingTime)
         {
-            float result;
-            Dps310PressureSensor.getResultWhenStarted(result);
+            Dps310PressureSensor.getResultWhenStarted(lastPressure);
             hasStartedDpsMeasure = false;
             float deltaT = (millis() - lastTimeKalman)/1000.0f;
             lastTimeKalman = millis();
@@ -143,11 +166,12 @@ void loop() {
                 (deltaT*deltaT) / 2, deltaT, 1};
             K.Q *= n_r_a * n_r_a;
 
-            state(0) = getHeightDifference(result);
+            state(0) = getHeightDifference(lastPressure);
             state(2) = sumAcc / (float)countAcc;
             obs = K.H * state;
             K.update(obs);
             lastVelocity = K.x(1);
+            sendUpdate();
             //Serial.println(lastVelocity);
             sumAcc = 0.0f;
             countAcc = 0;
@@ -172,20 +196,7 @@ void loop() {
     }
     else
     {
-        mpu.update();
-        if(Serial.available())
-        {
-            char incomingByte = Serial.read();
-            Serial.println("Serial aviable: " + String(incomingByte));
-            if(incomingByte == 's')
-            {
-                Serial.println("Start");
-                startHeight = Serial.parseFloat();
-                startPressure = ReadPressure(10);
-                startTemp = readTemperatur(10);
-                hasStarted = true;
-            }
-        }
+      mpu.update();
     }
 }
 
@@ -227,12 +238,76 @@ void setNewBeep()
       noTone(8);
 }
 
+void sendUpdate()
+{
+	bluetooth.newPacket(arduinoPacketTypes::updateState);
+	bluetooth.addFloat(lastVelocity);
+	bluetooth.addFloat(lastPressure);
+	sendPacket();
+}
+
+//nur aufrufen wenn Packet ready ist in der Bluetooth Klasse
+void sendPacket()
+{
+    int size = 0;
+    char *pointerToFirst = bluetooth.getString(&size);
+    for (size_t i = 0; i < size; i++)
+    {
+        BTserial.write(*(pointerToFirst+i));
+    }
+}
+
+void addByteToPacket(char byte)
+{
+    if(!packetStarted)
+    {
+        indexRecieveBuffer = 0;
+        if((uint8_t)byte != startByte)
+        {
+            Serial.println("Erstes Byte war nicht startByte");
+            packetStarted = false;
+            return;
+        }
+        Serial.println("Packet started!");
+        packetStarted = true;
+    }
+    bluetoothRecieveBuffer[indexRecieveBuffer] = byte;
+    indexRecieveBuffer++;
+    if(packetStarted && indexRecieveBuffer >= 1 && bluetooth._flutterPackets[(uint8_t)bluetoothRecieveBuffer[1]].lengthPacket == indexRecieveBuffer)
+    {
+        Serial.println("Packet ended");
+        bluetooth.readPacket(bluetoothRecieveBuffer, indexRecieveBuffer);
+        packetStarted = false;
+        indexRecieveBuffer = 0;
+    }
+}
+
+void PacketHandler::StartVariometer(float height)
+{
+  Serial.println("Start");
+  startHeight = height;
+  startPressure = ReadPressure(10);
+  startTemp = readTemperatur(10);
+  hasStarted = true;
+  delay(100);
+	bluetooth.newPacket(arduinoPacketTypes::startPacket);
+  bluetooth.addFloat(startPressure);
+  bluetooth.addFloat(startTemp);
+  sendPacket();
+  StartKalman();
+}
+
+void PacketHandler::StopVariometer()
+{
+	hasStarted = false;
+}
+
 float getHeightDifference(float pressure)
 {
 	const float spezificR = 287.053;
 	const float g = 9.80665;
 	const float L = 0.0065;
-    return ((startTemp + 273.15) / L)*(pow(pressure / startPressure, -L * spezificR / g) - 1);
+  return ((startTemp + 273.15) / L)*(pow(pressure / startPressure, -L * spezificR / g) - 1);
 }
 
 float ReadPressure(int oversampling)
