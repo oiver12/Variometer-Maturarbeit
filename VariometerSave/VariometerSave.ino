@@ -1,9 +1,7 @@
 #include <MPU9250.h>
 #include <Dps310.h>
-#include <SoftwareSerial.h>
-#include "BluetoothCommunication.h"
-#include "CRC8.h"
-#include "PacketHandler.h"
+#include <SPI.h>
+#include <SD.h>
 
 #include <Kalman.h>
 using namespace BLA;
@@ -16,7 +14,6 @@ using namespace BLA;
 #define n_a 5.0
 
 #define n_r_a 0.1
-
 
 BLA::Matrix<Nobs> obs; // observation vector
 KALMAN<Nstate,Nobs> K; // your Kalman filter
@@ -51,47 +48,30 @@ Tonestate ToneArray[6] = {
   {biepstate::up3, 1000, 300, 3.5f, 10},
   {biepstate::up4, 1600, 90, 10, 999},
 };
-int indexCurrentToneArray = 2;
+int indexCurrentToneArray = 1;
 //benötigt um zu biepen --> nur einmal ausrechnen wenn Geschwindigkiet gesetzt wird
-float frequencyNow = 700;
-int durationNow = 750;
+float frequencyNow = 0;
+int durationNow = 0;
 float lastTimeBuzzer = 0;
 float lastBeepVelocity = 0;
 float velocityThreshold = 0.2f;
-
-int count = 0;
-int moduloSendBluethoot = 10; //=10*30 = all 300ms
-bool initSDCard = false;
-
-#ifdef saveSDCard
-#include <SPI.h>
-#include <SD.h>
-Sd2Card card;
-SdVolume volume;
-#endif
+float startTemp;
+float startPressure;
+uint32_t count = 0;
 
 MPU9250 mpu;
 Dps310 Dps310PressureSensor = Dps310();
 unsigned long lastTime = 0;
 bool hasStartedDpsMeasure = false;
-bool useXCTrack = false;
 float waitingTime = 0;
 float sumAcc;
 float lastVelocity;
 int countAcc;
 unsigned long lastTimeKalman = 0;
 bool hasStarted = false;
-float startHeight = 0;
-float startTemp = 0;
-float startPressure = 0;
 float lastPressure = 0;
 
-//Objekt für den Bluethoot Controller
-SoftwareSerial BTserial(2, 3); // RX | TX
-BluetoothCommunication bluetooth = BluetoothCommunication();
-uint8_t bluetoothRecieveBuffer[10];
-int indexRecieveBuffer = 0;
-bool packetStarted = false;
+File myFile;
 
 void setup() 
 {
@@ -99,28 +79,26 @@ void setup()
   Wire.begin();
   Dps310PressureSensor.begin(Wire);
   delay(2000);
-  MPU9250Setting settings  = MPU9250Setting();
-  settings.accel_fs_sel = ACCEL_FS_SEL::A4G;
-  settings.gyro_fs_sel = GYRO_FS_SEL::G500DPS;
-  if (!mpu.setup(0x68, settings)) { 
+  //MPU9250Setting settings  = MPU9250Setting();
+  //settings.accel_fs_sel = ACCEL_FS_SEL::A4G;
+  //settings.gyro_fs_sel = GYRO_FS_SEL::G500DPS;
+  if (!mpu.setup(0x68)) { 
       while (1) {
           delay(5000);
       }
   }
   mpu.setAccBias(640.5f, 65.4f, 313.1f);
   mpu.setGyroBias(-412.475f, 0.45f, -134.55f);
-  mpu.setMagBias(118.51035f, -78.3431f, -30.889767f);
-  mpu.setMagScale(1.356725f, 0.7227414f, 1.137255f);
+  //mpu.setMagBias(118.51035f, -78.3431f, -30.889767f);
+  //mpu.setMagScale(1.356725f, 0.7227414f, 1.137255f);
   delay(1000);
-  BTserial.begin(9600);
-  //mpu.setFilterIterations(30);
-  Serial.println("Begun");
   mpu.update();
-  #ifdef saveSDCard
-  initSDCard = card.init(SPI_HALF_SPEED, 10);
-  initSDCard = volume.init(card);
-  
-  #endif
+  SD.begin(10);
+  SD.remove("data.txt");
+  myFile = SD.open("data.txt", FILE_WRITE);
+  hasStarted = true;
+  StartKalman();
+  int16_t ret = Dps310PressureSensor.measureTempOnce(startTemp, 10);
 }
 
 void StartKalman()
@@ -149,12 +127,6 @@ void StartKalman()
 }
 
 void loop() {
-    if (BTserial.available() > 0) 
-		{
-			char incomingByte = BTserial.read();
-      addByteToPacket(incomingByte);
-		}
-
     if(hasStarted)
     {
         if(!hasStartedDpsMeasure)
@@ -166,6 +138,10 @@ void loop() {
         if(hasStartedDpsMeasure && millis() - lastTime >= waitingTime)
         {
             Dps310PressureSensor.getResultWhenStarted(lastPressure);
+            if(count == 0){
+                startPressure = lastPressure;
+            }
+            count++;
             hasStartedDpsMeasure = false;
             float deltaT = (millis() - lastTimeKalman)/1000.0f;
             lastTimeKalman = millis();
@@ -183,9 +159,19 @@ void loop() {
             obs = K.H * state;
             K.update(obs);
             lastVelocity = K.x(1);
-            if(count % moduloSendBluethoot == 0)
+            if(myFile)
             {
-              sendUpdate();
+                myFile.println(String(deltaT*1000.0f, 0) + ';' + String(lastPressure, 3) + ';' + String(sumAcc / (float)countAcc, 4) + ',' + String(K.x(1), 3) + ';' + String(mpu.getQuaternionW()) + ';' + String(mpu.getQuaternionX()) + ';' + String(mpu.getQuaternionY()) + ';' + String(mpu.getQuaternionZ()));
+                if(count % 10 == 0)
+                {
+                    //speichern auf SD Karte
+                    myFile.flush();
+                }
+            }
+            if(count % 100 == 0)
+            {
+                float lastTemp;
+                Dps310PressureSensor.measureTempOnce(lastTemp, 1);
             }
             sumAcc = 0.0f;
             countAcc = 0;
@@ -195,7 +181,6 @@ void loop() {
               lastTimeBuzzer = millis();
               tone(8, frequencyNow, durationNow/2);
             }
-            count++;
         }
         if (mpu.update()) {
             float q0 = mpu.getQuaternionW();
@@ -252,162 +237,10 @@ void setNewBeep()
       noTone(8);
 }
 
-void sendUpdate()
-{
-  if(!useXCTrack)
-  {
-    bluetooth.newPacket(arduinoPacketTypes::updateState);
-    bluetooth.addFloat(lastVelocity);
-    bluetooth.addFloat(lastPressure);
-    sendPacket();
-  }
-  else
-  {
-    Serial.println("Send XC");
-    //String str_out = "LK8EX1," +String(lastPressure/100)+ ",99999," + String(lastVelocity) + ",99,999,";
-    String str_out = String("LK8EX1,")
-    +String(lastPressure)
-    +String(",99999,") //Höhe wird aber ignoriert, wenn Druck gesendet
-    +String(lastVelocity * 100) //in cm/s
-    +String(",99") //Temperatur
-    +String(",999,"); //Battery
-    unsigned int checksum_end, ai, bi;                                              
-    for (checksum_end = 0, ai = 0; ai < str_out.length(); ai++)
-    {
-      bi = (unsigned char)str_out[ai];
-      checksum_end ^= bi;
-    }
-    BTserial.print("$");       
-    BTserial.print(str_out);
-    BTserial.print("*");
-    BTserial.println(checksum_end, HEX);
-  }
-}
-
-//nur aufrufen wenn Packet ready ist in der Bluetooth Klasse
-void sendPacket()
-{
-    int size = 0;
-    char *pointerToFirst = bluetooth.getString(&size);
-    for (size_t i = 0; i < size; i++)
-    {
-      BTserial.write(*(pointerToFirst+i));
-    }
-}
-
-void addByteToPacket(char byte)
-{
-    if(!packetStarted)
-    {
-        indexRecieveBuffer = 0;
-        if((uint8_t)byte != startByte)
-        {
-            packetStarted = false;
-            return;
-        }
-        packetStarted = true;
-    }
-    bluetoothRecieveBuffer[indexRecieveBuffer] = byte;
-    indexRecieveBuffer++;
-    if(packetStarted && indexRecieveBuffer >= 1 && bluetooth._flutterPackets[(uint8_t)bluetoothRecieveBuffer[1]].lengthPacket == indexRecieveBuffer)
-    {
-        bluetooth.readPacket(bluetoothRecieveBuffer, indexRecieveBuffer);
-        packetStarted = false;
-        indexRecieveBuffer = 0;
-    }
-}
-
-void PacketHandler::StartVariometer(float height, bool _useXCTrack)
-{
-  Serial.println("Started" + String(_useXCTrack));
-  useXCTrack = _useXCTrack;
-  startHeight = height;
-  startPressure = ReadPressure(10);
-  startTemp = readTemperatur(10);
-  hasStarted = true;
-	bluetooth.newPacket(arduinoPacketTypes::StartVarioPacket);
-  bluetooth.addFloat(startPressure);
-  bluetooth.addFloat(startTemp);
-  sendPacket();
-  StartKalman();
-}
-
-void PacketHandler::StopVariometer()
-{
-  Serial.println("Stop");
-	hasStarted = false;
-}
-
-void PacketHandler::WelcomePacket()
-{
-  Serial.println("Welcome");
-  //erstes Mal vom Arduino senden wird erstes Byte verloren daher hier ein Byte senden (ACHTUNG SCHLECHTE LÖSUNG)
-  BTserial.write(29);
-  bluetooth.newPacket(arduinoPacketTypes::WelcomResponsePacket);
-  bluetooth.addBool(Dps310PressureSensor.initSucces());
-  bluetooth.addBool(mpu.isConnected());
-  #ifdef saveSDCard
-  bluetooth.addBool(initSDCard);
-  //Von SDCard Info example
-  if(initSDCard)
-    bluetooth.addFloat(volume.clusterCount() * volume.blocksPerCluster() / 2);
-  else
-    bluetooth.addFloat(0);
-  #endif
-  #ifndef saveSDCard
-  bluetooth.addBool(false);
-  bluetooth.addFloat(0);
-  #endif
-  sendPacket();
-}
-
 float getHeightDifference(float pressure)
 {
 	const float spezificR = 287.053;
 	const float g = 9.80665;
 	const float L = 0.0065;
   return ((startTemp + 273.15) / L)*(pow(pressure / startPressure, -L * spezificR / g) - 1);
-}
-
-float ReadPressure(int oversampling)
-{
-	float pres;
-	//uint8_t oversampling = 1;
-	int16_t ret;
-	float sumPres = 0;
-	for(int i = 0; i< oversampling; i++)
-	{
-		ret = Dps310PressureSensor.measurePressureOnce(pres, 1);
-		sumPres += pres;
-		if (ret != 0)
-		{
-			//Something went wrong.
-			//Look at the library code for more information about return codes
-			//Serial.print("FAIL! ret = ");
-			//Serial.println(ret);
-			return 0;
-		}
-	}
-	return (sumPres/oversampling);
-}
-
-float readTemperatur(int oversampling)
-{
-	float temp;
-	float sumTemp = 0;
-	int16_t ret;
-	for (size_t i = 0; i < oversampling; i++)
-	{
-		ret = Dps310PressureSensor.measureTempOnce(temp, 1);
-		sumTemp += temp;
-		if (ret != 0)
-		{
-			//Something went wrong.
-			//Look at the library code for more information about return codes
-			//Serial.print("FAIL! ret = ");
-			//Serial.println(ret);
-			return 0;
-		}
-	}
-	return (sumTemp/oversampling);
 }

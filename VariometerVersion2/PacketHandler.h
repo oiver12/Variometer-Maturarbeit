@@ -3,8 +3,9 @@
 
 class PacketHandler{
 public:
-    static void StartVariometer(float startHeight);
+    static void StartVariometer(float startHeight, bool usXCTrack);
     static void StopVariometer();
+    static void WelcomePacket();
 };
 
 #endif
