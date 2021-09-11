@@ -1,5 +1,5 @@
 {
-    "configuration": "mode=off",
+    "configuration": "mode=on",
     "board": "arduino:megaavr:nona4809",
     "programmer": "arduino:avrisp",
     "sketch": "VariometerVersion2.ino",
