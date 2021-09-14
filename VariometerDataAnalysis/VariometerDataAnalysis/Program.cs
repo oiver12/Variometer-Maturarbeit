@@ -28,7 +28,7 @@ namespace VariometerDataAnalysis
 				float redLuft = startPressure[i] / (float)Math.Pow((1 - tempGrad * startHeight[i] / startTemp[i]), 0.03416f / tempGrad);
 				Console.WriteLine(i.ToString() + ". Reduzierter Luftdruck von: " + redLuft);
 			}
-			string[][] allLines = { File.ReadAllLines(@"..\..\GleitschirmFlug1.txt") };
+			string[][] allLines = { File.ReadAllLines(@"..\..\5MinMessungStill.txt") };
 			float[] time = new float[startPressure.Length];
 			float[] pressure = new float[startPressure.Length];
 			for (int i = 0; i < pressure.Length; i++)
