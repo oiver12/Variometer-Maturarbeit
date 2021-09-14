@@ -97,7 +97,7 @@ void setup()
 	//wenn der Arduino gestartet wird, wird altes File gelöscht und neues kreiert
 	if (!SD.begin(chipSelect))
   	{
-		  Serial.println("Failed to set SDCard");
+		Serial.println("Failed to set SDCard");
 	  return;
   	}
 	SD.remove("data.txt");
@@ -138,7 +138,6 @@ void loop()
 					lastVelocity = 0;
 				}
 				setNewBeep();
-				Serial.println(String(lastVelocity));
 				//BTserial.println(String(lastVelocity));
 				lastTimeVelocity = millis();
 				//neue Basishöhe setzten
@@ -150,7 +149,6 @@ void loop()
 					lastPressure = ReadPressure(7);
 					variometer.setNewBase(lastPressure, lastTemp);
 					lastTimeSet = millis();
-					Serial.println("New Base Set");
 				}
 				sendUpdate();
 				#ifdef logSDCard
@@ -237,11 +235,11 @@ void addByteToPacket(char byte)
         indexRecieveBuffer = 0;
         if((uint8_t)byte != startByte)
         {
-            Serial.println("Erstes Byte war nicht startByte");
+            //Serial.println("Erstes Byte war nicht startByte");
             packetStarted = false;
             return;
         }
-        Serial.println("Packet started!");
+        //Serial.println("Packet started!");
         packetStarted = true;
     }
     bluetoothRecieveBuffer[indexRecieveBuffer] = byte;
@@ -260,7 +258,6 @@ void PacketHandler::StartVariometer(float height)
 	lastTemp = readTemperatur(10);
 	startHeight = height;
 	float startPressure = ReadPressure(10);
-	Serial.println(startPressure);
 	delay(100);
 	hasStarted = true;
 	variometer.init(1, startPressure, lastTemp, startHeight);

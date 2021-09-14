@@ -10,8 +10,8 @@ using namespace BLA;
 #define Nobs 2   // position, acceleration
 
 // measurement std
-#define n_p 0.3
-#define n_a 5.0
+#define n_p 0.01
+#define n_a 0.007
 
 #define n_r_a 0.1
 
@@ -92,13 +92,18 @@ void setup()
   //mpu.setMagBias(118.51035f, -78.3431f, -30.889767f);
   //mpu.setMagScale(1.356725f, 0.7227414f, 1.137255f);
   delay(1000);
+  mpu.selectFilter(QuatFilterSel::MAHONY);
   mpu.update();
   SD.begin(10);
   SD.remove("data.txt");
   myFile = SD.open("data.txt", FILE_WRITE);
   hasStarted = true;
   StartKalman();
-  int16_t ret = Dps310PressureSensor.measureTempOnce(startTemp, 10);
+  int16_t ret = Dps310PressureSensor.measureTempOnce(startTemp, 1);
+  if(myFile)
+  {
+    myFile.println(startTemp);
+  }
 }
 
 void StartKalman()
@@ -161,7 +166,7 @@ void loop() {
             lastVelocity = K.x(1);
             if(myFile)
             {
-                myFile.println(String(deltaT*1000.0f, 0) + ';' + String(lastPressure, 3) + ';' + String(sumAcc / (float)countAcc, 4) + ',' + String(K.x(1), 3) + ';' + String(mpu.getQuaternionW()) + ';' + String(mpu.getQuaternionX()) + ';' + String(mpu.getQuaternionY()) + ';' + String(mpu.getQuaternionZ()));
+                myFile.println(String(deltaT*1000.0f, 0) + ';' + String(lastPressure, 3) + ';' + String(sumAcc / (float)countAcc, 4) + ';' + String(K.x(1), 3) + ';' + String(mpu.getQuaternionW()) + ';' + String(mpu.getQuaternionX()) + ';' + String(mpu.getQuaternionY()) + ';' + String(mpu.getQuaternionZ()));
                 if(count % 10 == 0)
                 {
                     //speichern auf SD Karte
@@ -172,6 +177,10 @@ void loop() {
             {
                 float lastTemp;
                 Dps310PressureSensor.measureTempOnce(lastTemp, 1);
+                if(myFile)
+                {
+                  myFile.println("F" + String(lastTemp, 3));
+                }
             }
             sumAcc = 0.0f;
             countAcc = 0;
@@ -187,7 +196,7 @@ void loop() {
             float q1 = mpu.getQuaternionX();
             float q2 = mpu.getQuaternionY();
             float q3 = mpu.getQuaternionZ();
-            // accX minus da Madgwick hat X Beschleunigung minus
+            // accX minus da Madgwick/Mahony hat X Beschleunigung minus
             float acc = (2*(q1*q3 - q0*q2)) * -mpu.getAccX() + (2*(q2*q3+q0*q1)) * mpu.getAccY() + (2*(q0*q0+q3*q3) -1)*mpu.getAccZ();
             float gravityCompensatedAccel = (acc - 1.0f) / -0.980665f;
             sumAcc += gravityCompensatedAccel;
