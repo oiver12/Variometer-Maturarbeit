@@ -6,14 +6,14 @@
 #include <Kalman.h>
 using namespace BLA;
 
-#define Nstate 3 // position, speed, acceleration
-#define Nobs 2   // position, acceleration
+#define Nstate 3 // position, speed, acceleration (x)
+#define Nobs 2   // position, acceleration (z)
 
 // measurement std
 #define n_p 0.01
 #define n_a 0.007
 
-#define n_r_a 0.1
+#define n_r_a 0.4
 
 BLA::Matrix<Nobs> obs; // observation vector
 KALMAN<Nstate,Nobs> K; // your Kalman filter

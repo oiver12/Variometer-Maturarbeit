@@ -12,10 +12,10 @@ using namespace BLA;
 #define Nobs 2   // position, acceleration
 
 // measurement std
-#define n_p 0.3
-#define n_a 5.0
+#define n_p 0.01
+#define n_a 0.007
 
-#define n_r_a 0.1
+#define n_r_a 0.118
 
 
 BLA::Matrix<Nobs> obs; // observation vector
@@ -46,7 +46,7 @@ class Tonestate{
 Tonestate ToneArray[6] = {
   {biepstate::low, 120, -1, -999, -2.5f},
   {biepstate::equal, 0, 0, -2.5f, 0.15f},
-  {biepstate::up1, 700, 750, 0.05f, 1.5f},
+  {biepstate::up1, 700, 750, 0.15f, 1.5f},
   {biepstate::up2, 850, 540, 1.5f, 3.5f},
   {biepstate::up3, 1000, 300, 3.5f, 10},
   {biepstate::up4, 1600, 90, 10, 999},
@@ -113,20 +113,29 @@ void setup()
   mpu.setMagScale(1.356725f, 0.7227414f, 1.137255f);
   delay(1000);
   BTserial.begin(9600);
-  //mpu.setFilterIterations(30);
+  int startTones[] = {349, 440, 523};
+  //                  F4, A4, C5
+  for (size_t i = 0; i < sizeof(startTones)/sizeof(startTones[i]); i++)
+  {
+    tone(8, startTones[i]);
+    delay(500);
+  }
+  noTone(8);
   Serial.println("Begun");
   mpu.update();
   #ifdef saveSDCard
   initSDCard = card.init(SPI_HALF_SPEED, 10);
   initSDCard = volume.init(card);
-  
   #endif
 }
 
 void StartKalman()
 {
-  //K.x.Fill(0.0);
-  K.P.Fill(0);
+  K.x.Fill(0.0);
+  K.P = {500.0, 0.0, 0.0,
+          0.0, 500.0, 0.0,
+          0.0, 0.0, 500.0
+  };
     // time evolution matrix
   K.F = {1.0, 0.0, 0.0,
           0.0, 1.0, 0.0,

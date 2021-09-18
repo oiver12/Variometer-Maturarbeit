@@ -38,6 +38,7 @@ unsigned int count = 0;
 
 void setup() {
   Serial.begin(115200);
+  tone(8, 1000);
 }
 
 void loop() {

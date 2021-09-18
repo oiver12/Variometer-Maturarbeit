@@ -1,7 +1,7 @@
 {
-    "configuration": "cpu=atmega328old",
-    "board": "arduino:avr:nano",
+    "configuration": "mode=off",
+    "board": "arduino:megaavr:nona4809",
     "programmer": "arduino:avrisp",
     "sketch": "PassivBuzzerTest.ino",
-    "port": "COM4"
+    "port": "COM7"
 }
