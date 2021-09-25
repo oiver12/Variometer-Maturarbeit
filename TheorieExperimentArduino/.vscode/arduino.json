@@ -2,6 +2,6 @@
     "configuration": "mode=on",
     "board": "arduino:megaavr:nona4809",
     "programmer": "arduino:avrisp",
-    "sketch": "ExperimentMA.ino",
+    "sketch": "TheorieExperimentArduino.ino",
     "port": "COM7"
 }

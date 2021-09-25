@@ -12,10 +12,10 @@ using namespace BLA;
 #define Nobs 2   // position, acceleration
 
 // measurement std
-#define n_p 0.01
-#define n_a 0.007
+#define n_p 0.1298
+#define n_a 0.0069
 
-#define n_r_a 0.118
+#define n_r_a 0.1183
 
 
 BLA::Matrix<Nobs> obs; // observation vector
@@ -131,7 +131,6 @@ void setup()
 
 void StartKalman()
 {
-  K.x.Fill(0.0);
   K.P = {500.0, 0.0, 0.0,
           0.0, 500.0, 0.0,
           0.0, 0.0, 500.0
@@ -152,7 +151,7 @@ void StartKalman()
                 0.0, 0.0,     0.0,
                 0.0,     0.0, 0.0};
   
-  
+  K.x.Fill(0.0);
   state.Fill(0.0);
   obs.Fill(0.0);
 }
