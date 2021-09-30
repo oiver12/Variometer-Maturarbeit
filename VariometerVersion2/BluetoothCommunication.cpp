@@ -68,14 +68,15 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	char packetType = 0;
 	readType<char>(_packet, size, &packetType);
 	uint8_t test = packetType;
-	Serial.println(test);
 	if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::start)
 	{
 		float startHeight = 0;
 		readType<float>(_packet, size, &startHeight);
 		bool useXCTrack = false;
 		readType<bool>(_packet, size, &useXCTrack);
-		PacketHandler::StartVariometer(startHeight, useXCTrack);
+		bool soundON = false;
+		readType<bool>(_packet, size, &soundON);
+		PacketHandler::StartVariometer(startHeight, useXCTrack, soundON);
 	}
 	else if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::stop)
 	{
@@ -84,6 +85,29 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	else if((uint8_t)packetType == (uint8_t)flutterPacketTypes::welcomePacket)
 	{
 		PacketHandler::WelcomePacket();
+	}
+	else if((uint8_t)packetType == (uint8_t)flutterPacketTypes::kalmansettings)
+	{
+		float standHeight = 0;
+		readType<float>(_packet, size, &standHeight);
+		float standMPU = 0;
+		readType<float>(_packet, size, &standMPU);
+		float processNoise = 0;
+		readType<float>(_packet, size, &processNoise);
+		PacketHandler::KalmanSetting(standHeight, standMPU, processNoise);
+	}
+	else if((uint8_t)packetType == (uint8_t)flutterPacketTypes::soundSetting)
+	{
+		Serial.println("Here");
+		float *toneArray = new float[15];
+		for (size_t i = 0; i < 15; i++)
+		{
+			float temp = 0;
+			readType<float>(_packet, size, &temp);
+			*(toneArray + i) = temp;
+		}
+		PacketHandler::soundSettings(toneArray, 15);
+		delete [] toneArray;
 	}
 	else
 		return false;
