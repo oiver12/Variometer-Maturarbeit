@@ -1,6 +1,7 @@
 #ifndef PacketHandler_h
 #define PacketHandler_h
 
+//Hilfsklasse um von BluetoothCommunication zu .ino file zu kommne
 class PacketHandler{
 public:
     static void StartVariometer(float startHeight, bool usXCTrack, bool soundON);
