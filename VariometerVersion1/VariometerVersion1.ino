@@ -7,9 +7,9 @@
 #include "CRC8.h"
 #include "PacketHandler.h"
 
-#define logSDCard
+//#define logSDCard
 
-//wenn der Flug auf der SD Karte aufgezeichnet werden soll kann das hier aktiviert werden
+//wenn der Flug auf der SD Karte aufgezeichnet werden soll kann das hier aktiviert werden, jedoch hat der Arduino Nano zu wenig Speicherplatz :(
 #ifdef logSDCard
 #include <SD.h>
 #include <SPI.h>

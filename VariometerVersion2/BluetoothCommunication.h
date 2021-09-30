@@ -11,7 +11,6 @@ enum arduinoPacketTypes : uint8_t
 	WelcomResponsePacket = 0,
 	StartVarioPacket = 1,
 	updateState = 2,
-
 };
 
 class arduinoPackets
@@ -26,6 +25,8 @@ enum flutterPacketTypes : uint8_t
 	welcomePacket = 0,
 	start = 1,
 	stop = 2,
+	soundSetting = 3,
+	kalmansettings = 4,
 };
 
 class flutterPackets
@@ -48,10 +49,12 @@ public:
 		{arduinoPacketTypes::updateState, (2 * 4 + 3)},
 	};
 
-	flutterPackets _flutterPackets[3]{
+	flutterPackets _flutterPackets[5]{
 		{flutterPacketTypes::welcomePacket, 3},
-		{flutterPacketTypes::start, (4 + 1 +3)},
+		{flutterPacketTypes::start, (4 + 1 + 1 + 3)},
 		{flutterPacketTypes::stop, 3}, 
+		{flutterPacketTypes::soundSetting, 15*4 + 3},
+		{flutterPacketTypes::kalmansettings, 4*3+3},
 	};
 
 	void newPacket(arduinoPacketTypes packetType);
