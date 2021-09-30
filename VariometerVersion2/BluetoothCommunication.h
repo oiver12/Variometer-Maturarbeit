@@ -6,6 +6,7 @@
 
 constexpr uint8_t startByte = 254;
 
+//Packettypen von arduino zu App
 enum arduinoPacketTypes : uint8_t
 {
 	WelcomResponsePacket = 0,
@@ -20,6 +21,7 @@ class arduinoPackets
 		int lengthPacket;
 };
 
+//Packettypen von App zu Arduino
 enum flutterPacketTypes : uint8_t
 {
 	welcomePacket = 0,
@@ -50,10 +52,15 @@ public:
 	};
 
 	flutterPackets _flutterPackets[5]{
+		//hallo App verbunden
 		{flutterPacketTypes::welcomePacket, 3},
+		//starte VAriometer: Höhe, XCTrack ja nein, Sound ja nein
 		{flutterPacketTypes::start, (4 + 1 + 1 + 3)},
+		//stop Variometer
 		{flutterPacketTypes::stop, 3}, 
+		//15 für die 3 Dinge eines Punktes
 		{flutterPacketTypes::soundSetting, 15*4 + 3},
+		//Kalman settings
 		{flutterPacketTypes::kalmansettings, 4*3+3},
 	};
 
