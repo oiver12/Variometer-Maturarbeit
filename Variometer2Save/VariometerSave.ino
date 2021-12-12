@@ -164,6 +164,7 @@ void loop() {
             obs = K.H * state;
             K.update(obs);
             lastVelocity = K.x(1);
+            //auf File schrieben und all 10 Sekunden speichern auf SDKarte
             if(myFile)
             {
                 myFile.println(String(deltaT*1000.0f, 0) + ';' + String(lastPressure, 3) + ';' + String(sumAcc / (float)countAcc, 4) + ';' + String(K.x(1), 3) + ';' + String(mpu.getQuaternionW()) + ';' + String(mpu.getQuaternionX()) + ';' + String(mpu.getQuaternionY()) + ';' + String(mpu.getQuaternionZ()));

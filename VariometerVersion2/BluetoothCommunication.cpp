@@ -2,6 +2,7 @@
 #include "CRC8.h"
 #include "PacketHandler.h"
 
+//hneues Paket machen: StartByte und index des Pakets
 void BluetoothCommunication::newPacket(arduinoPacketTypes packetType)
 {
 	reset();
@@ -10,6 +11,7 @@ void BluetoothCommunication::newPacket(arduinoPacketTypes packetType)
 	addByte((char)packetType);
 }
 
+//Byte zum Paket hinzufügen, dabei wird der Buffer gefüllt und der Index vergrössert
 void BluetoothCommunication::addByte(char byte)
 {
 	//ein zweites Mal dazu machen
@@ -25,7 +27,7 @@ void BluetoothCommunication::addByte(char byte)
 	//if (indexEndBuffer == sizeof(buffer) / sizeof(uint8_t))
 		//Serial.println("Buffer full!!");
 }
-
+//bool zu Paket hinzufügen, welches gestartet wurde
 void BluetoothCommunication::addBool(bool value)
 {
 	char* temp = static_cast<char*>(static_cast<void*>(&value));
@@ -48,8 +50,10 @@ void BluetoothCommunication::addFloat(float value)
 	addByte(*(temp + 3));
 }
 
+//Paket lesen, welches ganz angekommen ist
 bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 {
+	//Ist CRC richtig, wenn nicht dann ignorieren
 	crc8.reset();
 	readPos = size - 1;
 	char crc = ' ';
@@ -64,10 +68,12 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 		return false;
 	}
 
+	//auswerten
 	readPos = 1;
 	char packetType = 0;
 	readType<char>(_packet, size, &packetType);
 	uint8_t test = packetType;
+	//Verschiedene Auswertung bei verschiedenem Paket
 	if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::start)
 	{
 		float startHeight = 0;
@@ -98,7 +104,7 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	}
 	else if((uint8_t)packetType == (uint8_t)flutterPacketTypes::soundSetting)
 	{
-		Serial.println("Here");
+		//auslesen aller Punkte und in array speichern
 		float *toneArray = new float[15];
 		for (size_t i = 0; i < 15; i++)
 		{
@@ -115,12 +121,14 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	reset();
 }
 
+//lesen von Type. Dabei werden z.B. vier Bytes für ein float gelesen
 template<typename T>
 bool BluetoothCommunication::readType(uint8_t *_packet, int size, T *returnType)
 {
 	if(size - readPos < sizeof(T))
 		return false;
 	
+	//Genial von mir :) damit werden z.B. vier Bytes in die Bytes von einem Float gespeichert
 	memcpy(returnType, _packet+readPos, sizeof(T));
 	readPos += sizeof(T);
 	return true;
@@ -166,6 +174,7 @@ bool BluetoothCommunication::readFloat(uint8_t *_packet, int size, float *return
 	return true;
 }*/
 
+//Der Buffer wird hier ausgegebn für das schrieben auf den Adapter
 char* BluetoothCommunication::getString(int *size)
 {
 	buffer[indexEndBuffer] = (char)crc8.getCRC();
