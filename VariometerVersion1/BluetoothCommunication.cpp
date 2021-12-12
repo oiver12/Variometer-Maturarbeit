@@ -71,19 +71,37 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::start)
 	{
 		float startHeight = 0;
-		readFloat(_packet, size, &startHeight);
-		Serial.println("StartHeight: " + String(startHeight));
-		PacketHandler::StartVariometer(startHeight);
+		readType<float>(_packet, size, &startHeight);
+		bool useXCTrack = false;
+		readType<bool>(_packet, size, &useXCTrack);
+		bool soundON = false;
+		readType<bool>(_packet, size, &soundON);
+		PacketHandler::StartVariometer(startHeight, useXCTrack);
 	}
 	else if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::stop)
 	{
 		Serial.println("Vario ended");
 		PacketHandler::StopVariometer();
 	}
+	else if((uint8_t)packetType == (uint8_t)flutterPacketTypes::welcomePacket)
+	{
+		PacketHandler::WelcomePacket();
+	}
 	else
 		return false;
 
 	reset();
+}
+
+template<typename T>
+bool BluetoothCommunication::readType(uint8_t *_packet, int size, T *returnType)
+{
+	if(size - readPos < sizeof(T))
+		return false;
+	
+	memcpy(returnType, _packet+readPos, sizeof(T));
+	readPos += sizeof(T);
+	return true;
 }
 
 bool BluetoothCommunication::readByte(uint8_t *_packet, int size, char *returnChar)
