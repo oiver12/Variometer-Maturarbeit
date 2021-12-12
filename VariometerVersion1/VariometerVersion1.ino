@@ -33,9 +33,12 @@ double lastTemp;
 //letztes Mal als Basishöhe für Höhendifferenz gesetzt wurde sonst wird es nach einer Zeit ungenau, weiss nicht genau wieso
 double lastTimeSet;
 //all wie viele Milisekunden die Basishöhe für die Höhendifferenz gesetzt werden soll
-double baseSetRate = 20000;
+double baseSetRate = 200000;
 //wie oft die Geschwindigkeit bestimmt werden soll
-float velocityMeasureRate = 1000;
+float velocityMeasureRate = 1500;
+
+bool shouldMakeSound = true;
+bool isConnected = false;
 
 //es gibt verschiedene biepen für die Höhenangabe low hat konstanten tiefen Ton, equal hat keinen Ton
 //die oberen Töne können eingestellt werden mit Frequenc vom Ton und Töne pro Sekunde zwischen den States wird
@@ -104,6 +107,15 @@ void setup()
   	myFile = SD.open("data.txt", FILE_WRITE);
 	#endif
 	BTserial.begin(9600);
+   int startTones[] = {349, 440, 523};
+  //F4, A4, C5
+  for (size_t i = 0; i < sizeof(startTones)/sizeof(startTones[i]); i++)
+  {
+    tone(8, startTones[i]);
+    delay(500);
+  }
+  noTone(8);
+	PacketHandler::StartVariometer(0, true);
 }
 
 
@@ -134,9 +146,10 @@ void loop()
 				lastVelocity = variometer.getVelocitySinceLast();
 				if(isfinite(lastVelocity) == 0)
 				{
-					Serial.println(String(lastVelocity) + "  " + "was not finit");
+					//Serial.println(String(lastVelocity) + "  " + "was not finit");
 					lastVelocity = 0;
 				}
+				Serial.println(lastVelocity);
 				setNewBeep();
 				//BTserial.println(String(lastVelocity));
 				lastTimeVelocity = millis();
@@ -145,8 +158,8 @@ void loop()
 				if(millis() - lastTimeSet >= baseSetRate)
 				{
 					//sieben mal Temp und Druck messen und das als neue Basis setzten
-					lastTemp = readTemperatur(7);
-					lastPressure = ReadPressure(7);
+					lastTemp = readTemperatur(1);
+					lastPressure = ReadPressure(1);
 					variometer.setNewBase(lastPressure, lastTemp);
 					lastTimeSet = millis();
 				}
@@ -158,10 +171,17 @@ void loop()
 				}
 				#endif
 			}
+			 if(Serial.availableForWrite())
+            {
+				float height = variometer.getHeightDifferenz(lastPressure, lastTemp, 0);
+				char *c_Data = ( char* ) &height;
+				for( char c_Index = 0 ; c_Index < sizeof( float ) ; Serial.write( c_Data[ c_Index++ ] ) );
+				Serial.write(0xFF);
+            }
 			//neuer Druck und Zeit (in Sekunden) der Messung hinzufügen
 			variometer.addSample(lastPressure, millis()/static_cast<double>(1000));
 			//wenn es biepsen soll (nicht low oder equal) dann biepsen
-			if(ToneArray[indexCurrentToneArray].state != biepstate::low && ToneArray[indexCurrentToneArray].state != biepstate::equal && count%durationNow == 0)
+			if(ToneArray[indexCurrentToneArray].state != biepstate::low && ToneArray[indexCurrentToneArray].state != biepstate::equal && count%durationNow == 0 && shouldMakeSound)
 			{
 				tone(8, frequencyNow, (deltaTimeFrame*durationNow)/2);
 			}
@@ -180,10 +200,13 @@ void loop()
 
 void sendUpdate()
 {
-	bluetooth.newPacket(arduinoPacketTypes::updateState);
-	bluetooth.addFloat(lastVelocity);
-	bluetooth.addFloat(lastPressure);
-	sendPacket();
+	if(isConnected)
+	{
+		bluetooth.newPacket(arduinoPacketTypes::updateState);
+		bluetooth.addFloat(lastVelocity);
+		bluetooth.addFloat(lastPressure);
+		sendPacket();
+	}
 }
 
 //ausrechnen mit welcher Geschwindigkiet und Freqeunz gepiepst werden soll
@@ -253,18 +276,23 @@ void addByteToPacket(char byte)
     }
 }
 
-void PacketHandler::StartVariometer(float height)
+void PacketHandler::StartVariometer(float height, bool _soundON)
 {
+	Serial.println("Started");
+	shouldMakeSound = _soundON;
 	lastTemp = readTemperatur(10);
 	startHeight = height;
 	float startPressure = ReadPressure(10);
 	delay(100);
 	hasStarted = true;
 	variometer.init(1, startPressure, lastTemp, startHeight);
-	bluetooth.newPacket(arduinoPacketTypes::startPacket);
-    bluetooth.addFloat(startPressure);
-    bluetooth.addFloat(lastTemp);
-    sendPacket();
+	if(isConnected)
+	{
+		bluetooth.newPacket(arduinoPacketTypes::StartVarioPacket);
+		bluetooth.addFloat(startPressure);
+		bluetooth.addFloat(lastTemp);
+		sendPacket();	
+	}
 	#ifdef logSDCard
 	if(myFile)
 	{
@@ -302,6 +330,31 @@ float ReadPressure(int oversampling)
 	return (sumPres/oversampling);
 }
 
+void PacketHandler::WelcomePacket()
+{
+	isConnected = true;
+	StopVariometer();
+	//erstes Mal vom Arduino senden wird erstes Byte verloren daher hier ein Byte senden (ACHTUNG SCHLECHTE LÖSUNG)
+	BTserial.write(29);
+	bluetooth.newPacket(arduinoPacketTypes::WelcomResponsePacket);
+	bluetooth.addBool(Dps310PressureSensor.initSucces());
+	bluetooth.addBool(true);
+	#ifdef saveSDCard
+	bluetooth.addBool(initSDCard);
+	//Von SDCard Info example
+	if(initSDCard)
+		bluetooth.addFloat(volume.clusterCount() * volume.blocksPerCluster() / 2);
+	else
+		bluetooth.addFloat(0);
+	#endif
+	#ifndef saveSDCard
+	bluetooth.addBool(false);
+	bluetooth.addFloat(0);
+	#endif
+	sendPacket();
+}
+
+
 float readTemperatur(int oversampling)
 {
 	float temp;
@@ -322,4 +375,3 @@ float readTemperatur(int oversampling)
 	}
 	return (sumTemp/oversampling);
 }
-

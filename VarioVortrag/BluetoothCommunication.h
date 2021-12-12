@@ -25,6 +25,8 @@ enum flutterPacketTypes : uint8_t
 	welcomePacket = 0,
 	start = 1,
 	stop = 2,
+	soundSetting = 3,
+	kalmansettings = 4,
 };
 
 class flutterPackets
@@ -47,10 +49,12 @@ public:
 		{arduinoPacketTypes::updateState, (2 * 4 + 3)},
 	};
 
-	flutterPackets _flutterPackets[3]{
+	flutterPackets _flutterPackets[5]{
 		{flutterPacketTypes::welcomePacket, 3},
 		{flutterPacketTypes::start, (4 + 1 + 1 + 3)},
 		{flutterPacketTypes::stop, 3}, 
+		{flutterPacketTypes::soundSetting, 15*4 + 3},
+		{flutterPacketTypes::kalmansettings, 4*3+3},
 	};
 
 	void newPacket(arduinoPacketTypes packetType);
@@ -59,10 +63,10 @@ public:
 	void addInt(int value);
 	void addFloat(float value);
 
-	bool readByte(uint8_t *_packet, int size, char *returnChar);
-	bool readBool(uint8_t *_packet, int size, bool *returnBool);
-	bool readInt(uint8_t *_packet, int size, int *returnInt);
-	bool readFloat(uint8_t *_packet, int size, float *returnFloat);
+	//bool readByte(uint8_t *_packet, int size, char *returnChar);
+	//bool readBool(uint8_t *_packet, int size, bool *returnBool);
+	//bool readInt(uint8_t *_packet, int size, int *returnInt);
+	//bool readFloat(uint8_t *_packet, int size, float *returnFloat);
 
 	template<typename T>
 	bool readType(uint8_t *_packet, int size, T *returnType);

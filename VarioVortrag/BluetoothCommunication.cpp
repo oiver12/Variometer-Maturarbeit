@@ -22,8 +22,8 @@ void BluetoothCommunication::addByte(char byte)
 	buffer[indexEndBuffer] = byte;
 	indexEndBuffer++;
 	crc8.add(byte);
-	if (indexEndBuffer == sizeof(buffer) / sizeof(uint8_t))
-		Serial.println("Buffer full!!");
+	//if (indexEndBuffer == sizeof(buffer) / sizeof(uint8_t))
+		//Serial.println("Buffer full!!");
 }
 
 void BluetoothCommunication::addBool(bool value)
@@ -53,20 +53,20 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 	crc8.reset();
 	readPos = size - 1;
 	char crc = ' ';
-	readByte(_packet, size, &crc);
+	readType<char>(_packet, size, &crc);
 	for (size_t i = 1; i < size - 1; i++)
 	{
 		crc8.add(*(_packet + i));
 	}
 	if (!(crc == (char)crc8.getCRC()))
 	{
-		Serial.println("False CRC!");
+		//false CRC
 		return false;
 	}
 
 	readPos = 1;
 	char packetType = 0;
-	readByte(_packet, size, &packetType);
+	readType<char>(_packet, size, &packetType);
 	uint8_t test = packetType;
 	if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::start)
 	{
@@ -76,16 +76,38 @@ bool BluetoothCommunication::readPacket(uint8_t *_packet, int size)
 		readType<bool>(_packet, size, &useXCTrack);
 		bool soundON = false;
 		readType<bool>(_packet, size, &soundON);
-		PacketHandler::StartVariometer(startHeight, useXCTrack);
+		PacketHandler::StartVariometer(startHeight, useXCTrack, soundON);
 	}
 	else if ((uint8_t)packetType == (uint8_t)flutterPacketTypes::stop)
 	{
-		Serial.println("Vario ended");
 		PacketHandler::StopVariometer();
 	}
 	else if((uint8_t)packetType == (uint8_t)flutterPacketTypes::welcomePacket)
 	{
 		PacketHandler::WelcomePacket();
+	}
+	else if((uint8_t)packetType == (uint8_t)flutterPacketTypes::kalmansettings)
+	{
+		float standHeight = 0;
+		readType<float>(_packet, size, &standHeight);
+		float standMPU = 0;
+		readType<float>(_packet, size, &standMPU);
+		float processNoise = 0;
+		readType<float>(_packet, size, &processNoise);
+		PacketHandler::KalmanSetting(standHeight, standMPU, processNoise);
+	}
+	else if((uint8_t)packetType == (uint8_t)flutterPacketTypes::soundSetting)
+	{
+		Serial.println("Here");
+		float *toneArray = new float[15];
+		for (size_t i = 0; i < 15; i++)
+		{
+			float temp = 0;
+			readType<float>(_packet, size, &temp);
+			*(toneArray + i) = temp;
+		}
+		PacketHandler::soundSettings(toneArray, 15);
+		delete [] toneArray;
 	}
 	else
 		return false;
@@ -103,7 +125,7 @@ bool BluetoothCommunication::readType(uint8_t *_packet, int size, T *returnType)
 	readPos += sizeof(T);
 	return true;
 }
-
+/*
 bool BluetoothCommunication::readByte(uint8_t *_packet, int size, char *returnChar)
 {
 	if (size - readPos == 0)
@@ -142,14 +164,14 @@ bool BluetoothCommunication::readFloat(uint8_t *_packet, int size, float *return
 	memcpy(returnFloat, _packet+readPos, sizeof(float));
 	readPos += sizeof(float);
 	return true;
-}
+}*/
 
 char* BluetoothCommunication::getString(int *size)
 {
 	buffer[indexEndBuffer] = (char)crc8.getCRC();
 	indexEndBuffer++;
-	if(_arduinoPackets[buffer[1]].lengthPacket != indexEndBuffer)
-		Serial.println("Packet not correct length");
+	//if(_arduinoPackets[buffer[1]].lengthPacket != indexEndBuffer)
+		//Serial.println("Packet not correct length");
 	*size = indexEndBuffer;
 	crc8.reset();
 	return &buffer[0];
