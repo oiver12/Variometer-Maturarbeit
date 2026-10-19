@@ -1,4 +1,66 @@
 # Variometer-Maturarbeit
+
+An Arduino-based paragliding variometer developed for my **Maturarbeit (Swiss
+high-school thesis) in 2021**. It estimates altitude and vertical speed from sensor
+measurements, provides acoustic feedback, and communicates over Bluetooth.
+
+The project compares linear regression with a Kalman filter. It includes C++
+classes for the variometer, linear regression, Bluetooth communication and packet
+handling, FIFO buffers, C# simulation and analysis tools, and recorded sensor data.
+The C# simulation uses simulated sensor noise; the Arduino simulation calculates
+the velocity estimates. The Flutter companion app lives in the separate
+[Variometer-FlutterApp repository](https://github.com/oiver12/Variometer-FlutterApp).
+
+**Continuation:** I later continued the project in
+[VariometerV2](https://github.com/oiver12/VariometerV2). This repository preserves
+the 2021 thesis project.
+
+## Repository guide
+
+| Folder | Contents |
+| --- | --- |
+| `SaveSDCard/` | Arduino sketch for recording pressure changes and sample intervals to an SD card. |
+| `VariometerVersion1/` | Arduino variometer using linear regression, moving averages, FIFO buffers and Bluetooth communication. |
+| `VariometerVersion2/` | Arduino variometer using a Kalman filter, pressure and inertial sensors, acoustic feedback and Bluetooth/XCTrack communication. |
+| `Variometer2Save/` | Arduino sketch that records pressure, acceleration, Kalman velocity estimates and orientation to an SD card. |
+| `VariometerDataAnalysis/` | C# analysis of pressure recordings, with recorded experiments and Excel export. |
+| `Variometer2DataAnalysis/` | C# analysis of Kalman-filter recordings, sensor-noise measurements and Excel export. |
+| `TheorieExperimentC#/` | C# simulation with configurable sensor noise, saved velocity arrays and Excel export. Called “SimulationC#” in the original German text below. |
+| `SimulationArduino/` | Arduino simulation using saved synthetic measurements to calculate Kalman-filter and linear-regression velocity estimates. |
+| `VarioVortrag/` | Arduino demonstration sketch for the thesis presentation. |
+| `docs/images/` | Image placeholders, a checklist and a plot of archived comparison arrays. |
+| `scripts/` | Python script for plotting the archived comparison arrays without Excel. |
+
+## Images and simulation
+
+| Arduino prototype — photo pending | Thesis comparison plot — pending |
+| --- | --- |
+| ![Placeholder: add a photo of the Arduino prototype](docs/images/arduino-prototype-placeholder.svg) | ![Placeholder: add the original thesis comparison plot](docs/images/thesis-comparison-placeholder.svg) |
+
+See the [image checklist](docs/images/CHECKLIST.txt) for the missing originals.
+A separate [plot of the archived C# velocity arrays](docs/images/archived-comparison.svg)
+can be regenerated on Linux:
+
+```sh
+python3 -m venv /tmp/variometer-plot
+/tmp/variometer-plot/bin/python -m pip install -r scripts/requirements.txt
+/tmp/variometer-plot/bin/python scripts/plot_comparison.py
+```
+
+The original C# projects target .NET Framework 4.6.1 and automate Microsoft Excel
+through COM. They require Windows and Excel as written; they cannot run unchanged
+with Linux `dotnet`. The Python script plots the saved velocity arrays over the
+first 200 samples (7.96 seconds), matching the current C# loop and sampling
+interval. It does not rerun the filters or regenerate noise. The repository does
+not establish that the saved arrays, current noise settings and Arduino inputs
+come from the same run. This plot is therefore an illustration of archived data,
+not a verified reproduction of a thesis figure or a new performance result.
+
+## Original German documentation
+
+The original text below uses the names “Variometer1” and “Variometer2” for
+`VariometerVersion1/` and `VariometerVersion2/` respectively.
+
 Das Repository Variometer-Maturarbeit besteht aus verschiedenen Ordnern, welche einem Variometer oder einem Experiment zugeschrieben werden können. Der Programmcode ist kommentiert, wodurch der Programmcode verständlich sein sollte. In den folgenden Abschnitten wird daher nur auf den Aufbau der einzelnen Ordner eingegangen. Auch wird erwähnt, welche Klasse welche Funktion erfüllt.
 ## Ordner „SaveSDCard“
 Mit diesem Arduino-Projekt lässt sich ein Flug ohne Geschwindigkeitsangabe auf die SD-Karte aufnehmen (siehe Abschnitt 4.5.1). Über die App „Bluetooth Terminal“ lässt sich der Bluetooth Adapter verbinden. Starten lässt sich die Aufnahme z.B. mit folgendem Befehl: „s100“. Wobei 100 die Starthöhe in Meter ist. Während der Aufnahme kann die Grösse der Datei, welcher auf dem Arduino abgespeichert wird, mit dem Befehl „f“ abgerufen werden. Mit dem Befehl „c“ muss die Aufnahme beendet werden. Das Beenden ist wichtig, da sonst die Datei auf der SD-Karte nicht gespeichert wird. Ca. alle 40 ms wird ein Zustand abgespeichert, welcher folgendermassen aufgebaut ist:

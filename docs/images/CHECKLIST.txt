@@ -1,0 +1,26 @@
+Images for the 2021 Maturarbeit
+
+[ ] Add a real photograph of the Arduino prototype as arduino-prototype.jpg.
+    Show the board, sensors and assembled device clearly.
+    Check the background and image metadata for personal information.
+    Replace the prototype placeholder link in the root README.
+
+[ ] Export the original Kalman-filter vs. linear-regression plot from the thesis
+    as thesis-comparison.png or thesis-comparison.svg.
+    Include axis labels, units and a legend. Record the thesis figure/page here.
+    Replace the comparison placeholder link in the root README.
+
+[x] Provide archived-comparison.svg and scripts/plot_comparison.py as a separate
+    illustration of the saved C# velocity arrays (first 200 samples, dt=0.04 s).
+    This is not an execution of the C# simulation or a verified thesis figure.
+
+[ ] Check whether the saved velocity arrays and SimulationArduino inputs belong
+    to the same run before using the archived plot to support any comparison.
+    The current C# program has changed noise settings and uses integrated
+    acceleration as its measHeight variable; do not assume matching inputs.
+
+[ ] When adding the thesis plot, document sensor noise, filter parameters,
+    regression window and treatment of startup samples from the original work.
+
+Both *-placeholder.svg files are labelled placeholders, not project photographs
+or measured results. No prototype image or original thesis figure was supplied.

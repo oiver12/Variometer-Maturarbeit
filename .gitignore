@@ -570,6 +570,40 @@ FodyWeavers.xsd
 # Local History for Visual Studio Code
 .history/
 
+# Variometer: generated presentation builds, Arduino output and local IDE files
+/VarioBuildVortrag/
+[Bb]uild/
+[Bb]uilds/
+[Oo]bj/
+[Ll]ibrary/
+[Tt]emp/
+[Ll]ogs/
+.pio/
+__vm/
+**/.vscode/c_cpp_properties.json
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.a
+*.elf
+*.hex
+*.eep
+*.pdb
+*.ipch
+*.VC.db*
+*.ide
+*.ide-shm
+*.ide-wal
+
+# Local Python environments and caches for the comparison plot
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.matplotlib/
+
 # Windows Installer files from build outputs
 *.cab
 *.msi
