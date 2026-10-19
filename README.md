@@ -28,33 +28,42 @@ the 2021 thesis project.
 | `TheorieExperimentC#/` | C# simulation with configurable sensor noise, saved velocity arrays and Excel export. Called “SimulationC#” in the original German text below. |
 | `SimulationArduino/` | Arduino simulation using saved synthetic measurements to calculate Kalman-filter and linear-regression velocity estimates. |
 | `VarioVortrag/` | Arduino demonstration sketch for the thesis presentation. |
-| `docs/images/` | Image placeholders, a checklist and a plot of archived comparison arrays. |
-| `scripts/` | Python script for plotting the archived comparison arrays without Excel. |
+| `docs/images/` | Comparison plot reproduced by executing the original C++ filters. |
+| `docs/data/` | Reproduced simulation output, source hashes and execution notes. |
+| `scripts/` | Linux host runner and plotting script for the original Arduino simulation. |
 
-## Images and simulation
+## Reproducing the filter comparison
 
-| Arduino prototype — photo pending | Thesis comparison plot — pending |
-| --- | --- |
-| ![Placeholder: add a photo of the Arduino prototype](docs/images/arduino-prototype-placeholder.svg) | ![Placeholder: add the original thesis comparison plot](docs/images/thesis-comparison-placeholder.svg) |
+![Kalman-filter and linear-regression results from rerunning the original C++ simulation](docs/images/filter-comparison.svg)
 
-See the [image checklist](docs/images/CHECKLIST.txt) for the missing originals.
-A separate [plot of the archived C# velocity arrays](docs/images/archived-comparison.svg)
-can be regenerated on Linux:
+This plot comes from compiling and executing the original C++ code on Linux.
+Both filters process the same **400 archived simulated sensor samples** from
+`SimulationArduino/SimulationArduino.ino`, covering 0–15.96 seconds. The runner
+executes the sketch's Kalman filter and the regression experiment using the
+original `Variometer`, `LinearRegression` and FIFO classes. The original inputs,
+filter parameters and C++ source files are unchanged.
+
+To reproduce it, install Python 3 and `g++`, then run:
 
 ```sh
 python3 -m venv /tmp/variometer-plot
 /tmp/variometer-plot/bin/python -m pip install -r scripts/requirements.txt
-/tmp/variometer-plot/bin/python scripts/plot_comparison.py
+/tmp/variometer-plot/bin/python scripts/plot_comparison.py --verify-archive
 ```
 
-The original C# projects target .NET Framework 4.6.1 and automate Microsoft Excel
-through COM. They require Windows and Excel as written; they cannot run unchanged
-with Linux `dotnet`. The Python script plots the saved velocity arrays over the
-first 200 samples (7.96 seconds), matching the current C# loop and sampling
-interval. It does not rerun the filters or regenerate noise. The repository does
-not establish that the saved arrays, current noise settings and Arduino inputs
-come from the same run. This plot is therefore an illustration of archived data,
-not a verified reproduction of a thesis figure or a new performance result.
+The first run downloads three checksum-verified library headers from pinned
+revisions of Kalman and BasicLinearAlgebra; later runs can use the cached copies.
+Compilation happens in a temporary directory. The script writes the plot,
+[CSV results](docs/data/filter-comparison.csv) and
+[source/library provenance](docs/data/filter-comparison.json).
+
+The reproduced Kalman outputs match all 400 saved C# reference values with a
+maximum observed difference of approximately 0.0000001 m/s. The host runner
+aligns the regression's serial output to one estimate per input sample, ignoring
+extra startup zero tokens. This is a rerun of the original simulation inputs,
+with no new sensor noise or flight measurements. See the
+[reproduction notes](docs/data/REPRODUCTION.txt) for library versions and host
+floating-point differences. The original Windows/Excel C# exporter is not needed.
 
 ## Original German documentation
 

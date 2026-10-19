@@ -1,0 +1,62 @@
+Reproducing the 2021 variometer filter comparison
+
+Run from the repository root:
+  python3 -m venv /tmp/variometer-plot
+  /tmp/variometer-plot/bin/python -m pip install -r scripts/requirements.txt
+  /tmp/variometer-plot/bin/python scripts/plot_comparison.py --verify-archive
+
+Requires Python 3, a GNU C++ compiler (g++), and internet access on the first run
+to download three pinned source headers. Subsequent runs can use the checked
+temporary cache; --deps-dir selects another cache directory. Compiler output is
+built in a temporary directory and removed automatically. No Arduino hardware,
+Excel, Windows, or .NET installation is required.
+
+What actually runs
+- The runner includes the unmodified SimulationArduino/SimulationArduino.ino
+  and calls setup(), executing the original Kalman experiment for all 400 saved
+  times, heights and accelerations (0–15.96 seconds).
+- It then calls Variometer::addSample for the regression experiment commented
+  out in the sketch, linking the original Variometer.cpp and LinearRegression.cpp
+  and using the original FiFo.h.
+- scripts/host_simulation/Arduino.h replaces only Serial output, String number
+  formatting and basic Arduino declarations. It does not implement either filter.
+- Parameters are read through the original C++ code: Kalman height std=1 m,
+  acceleration std=0.0069 m/s^2, process-noise scale=0.3; regression's configured
+  moving-average length=5 and FIFO length=50. No parameters have been retuned.
+
+Pinned dependencies (downloaded to a cache, not vendored in the repository)
+Kalman: rfetick/Kalman, revision df339d72f9f90f5cf5459b2f82e9234a12ab4162
+  https://github.com/rfetick/Kalman/tree/df339d72f9f90f5cf5459b2f82e9234a12ab4162
+BasicLinearAlgebra 2.3: tomstewart89/BasicLinearAlgebra,
+  revision fb37152795998668d1a1392026a8e69b5e18bef7
+  https://github.com/tomstewart89/BasicLinearAlgebra/tree/fb37152795998668d1a1392026a8e69b5e18bef7
+The repository did not lock the original installed library versions. These
+compatible revisions predate the thesis; their exact header SHA-256 hashes are
+checked on every run. BasicLinearAlgebra 3.2 is incompatible with this version of
+Kalman because its matrix API no longer has the Inverse() method used here.
+
+Output alignment and precision
+The original regression experiment prints 49 extra zero tokens while filling
+its window. The host runner keeps the first printed estimate from each call to
+addSample, discarding those extra tokens so every curve has one value per input
+sample. The regression calculations, including startup behavior, are unchanged.
+
+The matrices and regression state use float, as in the original code. Host
+double is 64-bit while AVR double is 32-bit, and numeric formatting differs.
+The new run is therefore not an instruction-level AVR emulation. The Kalman
+values nevertheless match all 400 saved values in
+TheorieExperimentC#/TheorieExperiment/Program.cs with a maximum observed absolute
+difference of approximately 1e-7 m/s. --verify-archive enforces a 2e-5 m/s tolerance
+to allow small platform-dependent floating-point differences. The stored
+regression array is not used to calculate the new regression results.
+
+Outputs
+docs/images/filter-comparison.svg: plot of input height and both velocity estimates
+docs/data/filter-comparison.csv: all input samples and recomputed filter outputs
+docs/data/filter-comparison.json: source hashes, library pins and verification result
+
+The existing simulated inputs are reused; no random noise is regenerated. The
+current C# generator has different settings and an experimental integrated-
+acceleration path. Its Windows/Excel export is not executed. This reruns the
+archived Arduino experiment; it does not claim to reproduce a particular thesis
+figure, a hardware flight test or a comparative accuracy result.

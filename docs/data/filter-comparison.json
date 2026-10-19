@@ -1,0 +1,42 @@
+{
+  "samples": 400,
+  "time_range_s": [
+    0.0,
+    15.96
+  ],
+  "execution": "Unmodified SimulationArduino sketch and C++ classes, compiled for the Linux host",
+  "libraries": [
+    {
+      "name": "Kalman",
+      "repository": "rfetick/Kalman",
+      "revision": "df339d72f9f90f5cf5459b2f82e9234a12ab4162",
+      "files": {
+        "Kalman.h": "09eaafc6e14b016e06f685215193efa15696491436e23be5e52fad1db73a1fa3"
+      }
+    },
+    {
+      "name": "BasicLinearAlgebra-2.3",
+      "repository": "tomstewart89/BasicLinearAlgebra",
+      "revision": "fb37152795998668d1a1392026a8e69b5e18bef7",
+      "files": {
+        "BasicLinearAlgebra.h": "13a58669ebd4807759e52cc35d3ff001b98690642d02f4fe3c793340486aec73",
+        "MemoryDelegate.hpp": "3b4ea71cd1c7ffbf669fdeffcde38cf0a33ad0fc52ad94d1ebbcb2947292944a"
+      }
+    }
+  ],
+  "source_sha256": {
+    "SimulationArduino/FiFo.h": "7b282519089165c33276e5eab84d40b47694c4519726569b3dc7b92a61658e78",
+    "SimulationArduino/LinearRegression.cpp": "f032a32ca96d0451fdbb1348c37ae450a83d4e0f3390e20494d0f7aee3ca6f10",
+    "SimulationArduino/LinearRegression.h": "81462f3c994eb89d88effc365b1d8a983407379b648a714d9cfba57dbb718b4c",
+    "SimulationArduino/SimulationArduino.ino": "a700eac3b6b0417bc33d8ad0d31785c55d4852b3320893bc14a4f3f79c2f1fc2",
+    "SimulationArduino/Variometer.cpp": "39f5b470c13ddcc8b29ce0df51fb83bdcd84c2ecf35adbf83a09f231144ae23f",
+    "SimulationArduino/Variometer.h": "4052341c16a343a07a57aca2f394c0498d83d3752902e1f97351e31d8d3ff0e2",
+    "scripts/host_simulation/Arduino.h": "35914cbee08199b30edc49631adf9fe3674210838f9f104c53c8c24d56555481",
+    "scripts/host_simulation/main.cpp": "fb030cfa293d2713a1dcc4597a05eec79649a33a8dcea690316c83a8066367be",
+    "scripts/plot_comparison.py": "1ae4d44c79513204d71b78757038ed0213287f83be556a39bcd1360c4bb75c5c",
+    "TheorieExperimentC#/TheorieExperiment/Program.cs": "bc080415d7197a9dbe01ec9cd40f19b3bc891e66875702fd4682049f16d0e0f8"
+  },
+  "alignment": "One regression estimate per input; extra serial warm-up zero tokens are ignored",
+  "precision": "Host double is 64-bit; AVR double is 32-bit. Matrix and regression state remain float.",
+  "archived_kalman_max_absolute_difference_m_s": 1.0000000005838672e-07
+}
